@@ -8,6 +8,95 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* ─── Software Checkbox Grid ─── */
+    .software-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .software-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8f9fa;
+      border: 1.5px solid #dee2e6;
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all .18s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent; /* ลบ highlight สีเทาบนมือถือ */
+      touch-action: manipulation;               /* ป้องกัน delay 300ms บน iOS */
+      min-height: 48px;                         /* touch target ขั้นต่ำ */
+    }
+    .software-item:hover {
+      border-color: #0d6efd;
+      background: #eef3ff;
+    }
+    .software-item input[type="checkbox"] {
+      width: 18px; height: 18px;
+      accent-color: #0d6efd;
+      flex-shrink: 0;
+      cursor: pointer;
+      /* ป้องกัน pointer-events ขัดกันบนมือถือ */
+      pointer-events: none;
+    }
+    .software-item.checked {
+      border-color: #0d6efd;
+      background: #dde9ff;
+    }
+    .software-item .sw-icon {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+      pointer-events: none;
+    }
+    .software-item .sw-name {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.3;
+      pointer-events: none;
+    }
+    /* ── Select dropdown mobile fix ── */
+    .form-select, select {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .sw-type-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    #pcTypeSelect {
+      font-weight: 600;
+    }
+    .sw-section-label {
+      font-size: 13px;
+      color: #6c757d;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .sw-selected-count {
+      font-size: 12px;
+      color: #0d6efd;
+      font-weight: 600;
+    }
+    /* มือถือ: grid 1 คอลัมน์ */
+    @media (max-width: 480px) {
+      .software-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .software-item {
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -31,7 +120,7 @@
           <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-primary"></i></span>
           <input type="text" id="searchEmpInput" class="form-control form-control-lg border-start-0" placeholder="พิมพ์ชื่อหรือรหัสพนักงาน..." autocomplete="off">
         </div>
-        <div id="autocompleteList" class="list-group position-absolute w-100 shadow-lg" style="display:none;top:100%;left:0;"></div>
+        <div id="autocompleteList" class="list-group position-absolute w-100 shadow-lg" style="display:none;top:100%;left:0;z-index:999;"></div>
       </div>
 
       <div id="employeeInfoBox">
@@ -97,21 +186,54 @@
           <textarea id="issueDetail" class="form-control" rows="3" required placeholder="อธิบายอาการ..."></textarea>
         </div>
 
+        <!-- ════════════════════════════════════════════════
+             ส่วน Request New PC (ปรับปรุงใหม่)
+        ════════════════════════════════════════════════ -->
         <div id="newPcSection" style="display:none;">
-          <h5 class="text-warning text-dark fw-bold mb-3"><i class="bi bi-laptop"></i> ข้อมูลพิจารณาขอเครื่องใหม่</h5>
-          <div class="mb-3">
-            <label class="form-label small">แนบรูปถ่ายเครื่องเก่า <span class="text-danger">* (บังคับ)</span></label>
-            <input type="file" id="oldPcPhoto" class="form-control" accept="image/*">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small">เหตุผลความจำเป็น</label>
-            <textarea id="reasonNewPc" class="form-control" rows="2" placeholder="เช่น เครื่องเก่าเกิน 5 ปี..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small">โปรแกรมที่ต้องการให้ติดตั้ง</label>
-            <textarea id="requiredSoftware" class="form-control" rows="2" placeholder="เช่น AutoCAD..."></textarea>
+          <div class="border border-warning rounded-3 p-4 mb-4" style="background:#fffdf0;">
+            <h5 class="text-warning fw-bold mb-4"><i class="bi bi-laptop"></i> ข้อมูลพิจารณาขอเครื่องใหม่</h5>
+
+            <!-- แนบรูปเครื่องเก่า -->
+            <div class="mb-4">
+              <label class="form-label small fw-semibold">📷 แนบรูปถ่ายเครื่องเก่า <span class="text-danger">* (บังคับ)</span></label>
+              <input type="file" id="oldPcPhoto" class="form-control" accept="image/*">
+            </div>
+
+            <!-- เหตุผลความจำเป็น -->
+            <div class="mb-4">
+              <label class="form-label small fw-semibold">📝 เหตุผลความจำเป็น</label>
+              <textarea id="reasonNewPc" class="form-control" rows="2" placeholder="เช่น เครื่องเก่าเกิน 5 ปี, ประสิทธิภาพต่ำ ไม่รองรับงาน..."></textarea>
+            </div>
+
+            <!-- ════ ประเภทเครื่อง (Dropdown ใหม่) ════ -->
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">
+                🖥️ ประเภทเครื่องที่ต้องการ <span class="text-danger">*</span>
+              </label>
+              <select id="pcTypeSelect" class="form-select" onchange="onPcTypeChange()" required>
+                <option value="">-- กรุณาเลือกประเภทเครื่อง --</option>
+                <option value="office">🏢 เครื่องสำหรับสำนักงาน (Office)</option>
+                <option value="engineering">⚙️ เครื่องสำหรับ Engineering</option>
+              </select>
+            </div>
+
+            <!-- ════ Checkbox โปรแกรม (แสดงตามประเภทที่เลือก) ════ -->
+            <div id="softwareSection" style="display:none;">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <label class="form-label small fw-semibold mb-0">
+                  📦 เลือกโปรแกรมที่ต้องการติดตั้ง
+                  <span id="swSelectedCount" class="sw-selected-count ms-2"></span>
+                </label>
+                <button type="button" class="btn btn-link btn-sm p-0 text-secondary" onclick="clearAllSoftware()">
+                  <i class="bi bi-x-circle"></i> ล้างทั้งหมด
+                </button>
+              </div>
+              <div id="softwareGrid" class="software-grid"></div>
+            </div>
+
           </div>
         </div>
+        <!-- ════ end newPcSection ════ -->
 
         <button type="button" class="btn btn-primary w-100 py-3 fs-5 shadow-sm" id="submitBtn" onclick="prepareSubmit()">
           <i class="bi bi-send-fill"></i> ยืนยันการส่งข้อมูล
