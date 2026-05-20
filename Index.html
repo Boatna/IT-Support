@@ -2,135 +2,446 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>IT Support Helpdesk</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    /* ─── Software Checkbox Grid ─── */
-    .software-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 8px;
-      margin-top: 10px;
+    /* ══════════════════════════════════════════
+       BASE — ใช้ร่วมกันทุกขนาดหน้าจอ
+    ══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: #f0f4f8;
+      color: #1e293b;
+      -webkit-text-size-adjust: 100%;
     }
-    .software-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #f8f9fa;
-      border: 1.5px solid #dee2e6;
-      border-radius: 8px;
-      padding: 10px 12px;
-      cursor: pointer;
-      transition: all .18s;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent; /* ลบ highlight สีเทาบนมือถือ */
-      touch-action: manipulation;               /* ป้องกัน delay 300ms บน iOS */
-      min-height: 48px;                         /* touch target ขั้นต่ำ */
+
+    /* ── Header ── */
+    .header-banner {
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
+      color: #fff;
+      padding: 28px 16px 24px;
     }
-    .software-item:hover {
-      border-color: #0d6efd;
-      background: #eef3ff;
-    }
-    .software-item input[type="checkbox"] {
-      width: 18px; height: 18px;
-      accent-color: #0d6efd;
-      flex-shrink: 0;
-      cursor: pointer;
-      /* ป้องกัน pointer-events ขัดกันบนมือถือ */
-      pointer-events: none;
-    }
-    .software-item.checked {
-      border-color: #0d6efd;
-      background: #dde9ff;
-    }
-    .software-item .sw-icon {
-      font-size: 18px;
-      width: 24px;
-      text-align: center;
-      pointer-events: none;
-    }
-    .software-item .sw-name {
-      font-size: 13px;
+    .header-banner h2 { font-size: clamp(1.2rem, 4vw, 1.75rem); margin-bottom: 4px; }
+    .header-banner p  { font-size: clamp(0.78rem, 2.5vw, 0.92rem); opacity: .82; }
+
+    /* ── Nav Pills ── */
+    .nav-pills .nav-link {
+      font-size: clamp(0.8rem, 2.8vw, 0.95rem);
+      padding: 9px 20px;
+      border-radius: 50px;
+      color: #475569;
       font-weight: 500;
-      line-height: 1.3;
-      pointer-events: none;
+      transition: all .2s;
     }
-    /* ── Select dropdown mobile fix ── */
-    .form-select, select {
+    .nav-pills .nav-link.active { background: #2563eb; color: #fff; }
+    .nav-pills .nav-link:not(.active):hover { background: #e2e8f0; }
+
+    /* ── Card ── */
+    .section-div { display: none; }
+    .active-section { display: block; }
+
+    .card {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    }
+
+    /* ── Section headings ── */
+    .section-heading {
+      font-size: clamp(0.9rem, 3vw, 1.05rem);
+      font-weight: 600;
+      color: #1d4ed8;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+      margin-bottom: 18px;
+    }
+
+    /* ── Form labels ── */
+    .form-label {
+      font-size: clamp(0.75rem, 2.5vw, 0.82rem);
+      color: #64748b;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    /* ── Form controls — touch-friendly ── */
+    .form-control, .form-select {
+      font-family: 'Prompt', sans-serif;
+      font-size: clamp(0.85rem, 3vw, 0.95rem);
+      min-height: 44px;        /* iOS HIG minimum tap target */
+      border-radius: 10px;
+      border: 1.5px solid #cbd5e1;
+      padding: 8px 12px;
+      transition: border-color .2s, box-shadow .2s;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
-    .sw-type-badge {
-      display: inline-block;
-      padding: 2px 8px;
+    .form-control:focus, .form-select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+      outline: none;
+    }
+    textarea.form-control { min-height: 90px; resize: vertical; }
+
+    /* ── Input group ── */
+    .input-group .form-control { border-radius: 0 10px 10px 0 !important; }
+    .input-group .input-group-text {
+      border-radius: 10px 0 0 10px !important;
+      border: 1.5px solid #cbd5e1;
+      border-right: none;
+      background: #fff;
+    }
+
+    /* ── Autocomplete ── */
+    #autocompleteList {
+      border-radius: 12px;
+      border: 1.5px solid #cbd5e1;
+      max-height: 260px;
+      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    }
+    #autocompleteList .list-group-item {
+      padding: 11px 14px;
+      font-size: clamp(0.8rem, 2.8vw, 0.88rem);
+      cursor: pointer;
+      border-left: none; border-right: none;
+    }
+    #autocompleteList .list-group-item:first-child { border-top: none; border-radius: 12px 12px 0 0; }
+    #autocompleteList .list-group-item:last-child  { border-bottom: none; border-radius: 0 0 12px 12px; }
+    #autocompleteList .list-group-item:hover { background: #eff6ff; }
+
+    /* ── Employee Info Box ── */
+    #employeeInfoBox {
+      background: #f8faff;
+      border: 1.5px solid #c7dcff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 10px;
+      display: none;
+    }
+    .info-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+    .info-value { font-size: clamp(0.82rem, 2.8vw, 0.95rem); font-weight: 600; color: #1e293b; }
+    .asset-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #dcfce7; color: #15803d;
+      font-size: 12px; font-weight: 600;
+      padding: 3px 10px; border-radius: 20px;
+    }
+
+    /* ── Email hint ── */
+    .email-hint {
+      font-size: 11.5px; color: #64748b;
+      background: #f1f5f9; border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    /* ── Form highlight box ── */
+    .form-highlight {
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px !important;
+      padding: 16px !important;
+    }
+
+    /* ── Priority select colors ── */
+    #priority { font-weight: 600; }
+
+    /* ── New PC Section ── */
+    .newpc-box {
+      background: #fffdf0;
+      border: 2px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(16px, 4vw, 28px);
+      margin-bottom: 20px;
+    }
+    .newpc-box h5 {
+      font-size: clamp(0.9rem, 3vw, 1rem);
+      color: #b45309;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    /* ── Software Pills ── */
+    .software-display-box {
+      background: #f0f6ff;
+      border: 1.5px solid #c7dcff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .sw-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #fff;
+      border: 1px solid #c7dcff;
       border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    #pcTypeSelect {
-      font-weight: 600;
-    }
-    .sw-section-label {
-      font-size: 13px;
-      color: #6c757d;
+      padding: 5px 12px;
+      font-size: clamp(11px, 2.5vw, 13px);
       font-weight: 500;
-      margin-bottom: 6px;
+      color: #1a4ea3;
+      white-space: nowrap;
     }
-    .sw-selected-count {
-      font-size: 12px;
-      color: #0d6efd;
+    .sw-info-note {
+      font-size: 11px; color: #64748b;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed #c7dcff;
+    }
+
+    /* ── Submit Button ── */
+    #submitBtn {
+      min-height: 52px;
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
       font-weight: 600;
+      border-radius: 12px;
+      letter-spacing: .3px;
+      transition: transform .15s, box-shadow .15s;
     }
-    /* มือถือ: grid 1 คอลัมน์ */
-    @media (max-width: 480px) {
-      .software-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
+    #submitBtn:active { transform: scale(0.98); }
+
+    /* ── Track Table ── */
+    #myTicketTable { font-size: clamp(0.72rem, 2.2vw, 0.85rem); }
+    #myTicketTable th { white-space: nowrap; font-size: clamp(0.7rem, 2vw, 0.8rem); }
+    #myTicketTable td { vertical-align: middle; }
+
+    /* ── Loading initial overlay ── */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10000;
+    }
+
+    /* ══════════════════════════════════════════
+       SUBMIT PROGRESS OVERLAY
+    ══════════════════════════════════════════ */
+    #submitOverlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 9999;
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    #submitOverlay.active { display: flex; }
+
+    .submit-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: clamp(24px, 5vw, 40px) clamp(20px, 5vw, 40px);
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 12px 48px rgba(0,0,0,.2);
+    }
+    .submit-spinner {
+      width: 54px; height: 54px;
+      border: 5px solid #e0e7ff;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 18px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .submit-title {
+      font-size: clamp(15px, 4vw, 17px);
+      font-weight: 700; color: #1e3a8a; margin-bottom: 4px;
+    }
+    .submit-subtitle {
+      font-size: clamp(11px, 3vw, 13px); color: #64748b; margin-bottom: 20px;
+    }
+    .step-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+    .step-list li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 0;
+      font-size: clamp(12px, 3vw, 14px); color: #374151;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+    .step-list li:last-child { border-bottom: none; }
+    .step-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0;
+      transition: background .3s, color .3s;
+    }
+    .step-icon.pending { background: #f1f5f9; color: #94a3b8; }
+    .step-icon.active  { background: #dbeafe; color: #2563eb; }
+    .step-icon.done    { background: #dcfce7; color: #16a34a; }
+    .step-icon.error   { background: #fee2e2; color: #dc2626; }
+    .step-label { flex: 1; transition: color .3s; }
+    .step-label.active { color: #2563eb; font-weight: 600; }
+    .step-label.done   { color: #15803d; }
+    .step-label.error  { color: #dc2626; }
+    .step-mini-spin {
+      width: 14px; height: 14px;
+      border: 2px solid #bfdbfe;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ══════════════════════════════════════════
+       MOBILE  ≤ 575px
+    ══════════════════════════════════════════ */
+    @media (max-width: 575px) {
+      body { background: #f0f4f8; }
+
+      /* container flush */
+      .container { padding-left: 12px !important; padding-right: 12px !important; }
+
+      .card { border-radius: 14px; }
+      .card-body, .card.p-4 { padding: 16px !important; }
+
+      /* nav pills — fill width on mobile */
+      .nav-pills { gap: 6px; }
+      .nav-pills .nav-link { flex: 1; text-align: center; padding: 10px 8px; font-size: 0.82rem; }
+
+      /* form grid — 1 column on mobile */
+      .form-highlight .row > [class*="col-"] { width: 100% !important; margin-bottom: 12px; }
+      .form-highlight .row > [class*="col-"]:last-child { margin-bottom: 0; }
+
+      /* employee info — stack */
+      #employeeInfoBox .row > [class*="col-"] { width: 50% !important; }
+
+      /* table — horizontal scroll with sticky first col */
+      .table-responsive { border-radius: 10px; border: 1px solid #e2e8f0; }
+      #myTicketTable { min-width: 580px; }
+      #myTicketTable th:first-child,
+      #myTicketTable td:first-child {
+        position: sticky; left: 0;
+        background: #fff; z-index: 1;
+        box-shadow: 2px 0 4px rgba(0,0,0,.06);
       }
-      .software-item {
-        padding: 10px 8px;
-        font-size: 12px;
+
+      /* search input */
+      #searchEmpInput { font-size: 0.9rem; }
+
+      /* newpc box */
+      .newpc-box { padding: 14px; }
+
+      /* submit overlay card */
+      .submit-card { max-width: 100%; border-radius: 16px; }
+
+      /* sticky submit button */
+      #submitBtn {
+        position: sticky;
+        bottom: 12px;
+        z-index: 100;
+        box-shadow: 0 4px 20px rgba(37,99,235,.35);
       }
     }
+
+    /* ══════════════════════════════════════════
+       TABLET  576px – 767px
+    ══════════════════════════════════════════ */
+    @media (min-width: 576px) and (max-width: 767px) {
+      .form-highlight .row > [class*="col-md-4"] { width: 50% !important; }
+      .card-body, .card.p-4 { padding: 20px !important; }
+    }
+
+    /* ══════════════════════════════════════════
+       DESKTOP  ≥ 768px
+    ══════════════════════════════════════════ */
+    @media (min-width: 768px) {
+      .header-banner { padding: 36px 24px 30px; }
+      .card-body, .card.p-4 { padding: 32px !important; }
+      .form-highlight { padding: 20px !important; }
+      #submitBtn { max-width: 480px; margin: 0 auto; display: block; }
+    }
+
+    /* ══════════════════════════════════════════
+       LARGE  ≥ 992px
+    ══════════════════════════════════════════ */
+    @media (min-width: 992px) {
+      .header-banner { padding: 40px 24px 34px; }
+    }
+
+    /* ── file input ── */
+    input[type="file"].form-control { padding: 10px 12px; cursor: pointer; }
+
+    /* ── badge auto ── */
+    #assetAutoLabel { font-size: 10px; vertical-align: middle; }
+
+    /* ── pcTypeSelect ── */
+    #pcTypeSelect { font-weight: 600; }
+
+    /* ── scrollbar ── */
+    #autocompleteList::-webkit-scrollbar { width: 5px; }
+    #autocompleteList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
 <body>
 
+<!-- ══ HEADER ══ -->
 <div class="header-banner text-center">
-  <h2 class="fw-bold"><i class="bi bi-pc-display-horizontal"></i> IT Support Helpdesk</h2>
-  <p class="m-0 opacity-75">ศูนย์บริการแจ้งซ่อมและรับเรื่องสารสนเทศ</p>
+  <h2 class="fw-bold mb-1"><i class="bi bi-pc-display-horizontal"></i> IT Support Helpdesk</h2>
+  <p class="m-0">ศูนย์บริการแจ้งซ่อมและรับเรื่องสารสนเทศ</p>
 </div>
 
-<div class="container mb-5" style="max-width:900px;">
-  <ul class="nav nav-pills justify-content-center mb-4">
-    <li class="nav-item"><a class="nav-link active" onclick="switchTab('formTab', this)"><i class="bi bi-pencil-square"></i> แจ้งปัญหา</a></li>
-    <li class="nav-item"><a class="nav-link" onclick="switchTab('trackTab', this)"><i class="bi bi-search"></i> ติดตามสถานะ</a></li>
+<!-- ══ MAIN ══ -->
+<div class="container mb-5 mt-4" style="max-width:900px;">
+
+  <!-- ── Tabs ── -->
+  <ul class="nav nav-pills justify-content-center mb-4 flex-nowrap gap-2">
+    <li class="nav-item flex-fill flex-md-grow-0">
+      <a class="nav-link active" onclick="switchTab('formTab',this)" style="cursor:pointer;">
+        <i class="bi bi-pencil-square"></i> <span class="d-none d-sm-inline">แจ้งปัญหา</span><span class="d-sm-none">แจ้ง</span>
+      </a>
+    </li>
+    <li class="nav-item flex-fill flex-md-grow-0">
+      <a class="nav-link" onclick="switchTab('trackTab',this)" style="cursor:pointer;">
+        <i class="bi bi-search"></i> <span class="d-none d-sm-inline">ติดตามสถานะ</span><span class="d-sm-none">ติดตาม</span>
+      </a>
+    </li>
   </ul>
 
+  <!-- ══════════════════════════════════════
+       TAB 1 — แจ้งปัญหา
+  ══════════════════════════════════════ -->
   <div id="formTab" class="section-div active-section card p-4">
-    <div class="card-body">
-      <h5 class="mb-4 text-primary fw-bold border-bottom pb-2"><i class="bi bi-person-badge"></i> 1. ข้อมูลพนักงานผู้แจ้ง</h5>
+    <div class="card-body p-0">
+
+      <!-- ── Section 1: ข้อมูลพนักงาน ── -->
+      <h5 class="section-heading"><i class="bi bi-person-badge"></i> 1. ข้อมูลพนักงานผู้แจ้ง</h5>
+
+      <!-- Search -->
       <div class="position-relative mb-3">
-        <label class="form-label text-muted small">ค้นหารหัส หรือ ชื่อพนักงาน <span class="text-danger">*</span></label>
+        <label class="form-label">ค้นหารหัส หรือ ชื่อพนักงาน <span class="text-danger">*</span></label>
         <div class="input-group">
-          <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-primary"></i></span>
-          <input type="text" id="searchEmpInput" class="form-control form-control-lg border-start-0" placeholder="พิมพ์ชื่อหรือรหัสพนักงาน..." autocomplete="off">
+          <span class="input-group-text"><i class="bi bi-search text-primary"></i></span>
+          <input type="text" id="searchEmpInput" class="form-control" placeholder="พิมพ์ชื่อหรือรหัสพนักงาน..." autocomplete="off">
         </div>
-        <div id="autocompleteList" class="list-group position-absolute w-100 shadow-lg" style="display:none;top:100%;left:0;z-index:999;"></div>
+        <div id="autocompleteList" class="list-group position-absolute w-100" style="display:none;top:calc(100% + 4px);left:0;z-index:999;"></div>
       </div>
 
+      <!-- Employee info box -->
       <div id="employeeInfoBox">
         <div class="row g-2 mb-2">
-          <div class="col-sm-3"><div class="info-label">รหัสพนักงาน</div><div class="info-value text-primary" id="d_empId"></div></div>
-          <div class="col-sm-4"><div class="info-label">ชื่อ-นามสกุล</div><div class="info-value" id="d_empName"></div></div>
-          <div class="col-sm-5"><div class="info-label">ตำแหน่ง / แผนก</div><div class="info-value" id="d_empPosDept"></div></div>
+          <div class="col-6 col-sm-3">
+            <div class="info-label">รหัสพนักงาน</div>
+            <div class="info-value text-primary" id="d_empId"></div>
+          </div>
+          <div class="col-6 col-sm-4">
+            <div class="info-label">ชื่อ-นามสกุล</div>
+            <div class="info-value" id="d_empName"></div>
+          </div>
+          <div class="col-12 col-sm-5">
+            <div class="info-label">ตำแหน่ง / แผนก</div>
+            <div class="info-value" id="d_empPosDept"></div>
+          </div>
         </div>
         <div class="d-flex flex-wrap align-items-center gap-3 mt-1">
-          <div class="small text-muted"><i class="bi bi-building text-primary"></i> Plant: <span id="d_empPlant" class="fw-bold text-dark ms-1"></span></div>
+          <div class="small text-muted">
+            <i class="bi bi-building text-primary"></i> Plant:
+            <span id="d_empPlant" class="fw-bold text-dark ms-1"></span>
+          </div>
           <div id="d_assetTagWrap" style="display:none;">
             <span class="asset-badge"><i class="bi bi-upc-scan"></i> <span id="d_empAssetTag"></span></span>
             <small class="text-success ms-1" style="font-size:11px;">auto-filled ✓</small>
@@ -138,39 +449,80 @@
         </div>
       </div>
 
-      <input type="hidden" id="empId"><input type="hidden" id="empName"><input type="hidden" id="empDept">
-      <input type="hidden" id="empPosition"><input type="hidden" id="empPlant">
+      <input type="hidden" id="empId">
+      <input type="hidden" id="empName">
+      <input type="hidden" id="empDept">
+      <input type="hidden" id="empPosition">
+      <input type="hidden" id="empPlant">
 
-      <div class="mt-3">
-        <label class="form-label text-muted small"><i class="bi bi-envelope-fill text-primary"></i> อีเมลของคุณ <span class="text-danger">*</span></label>
+      <!-- Email -->
+      <div class="mt-3 mb-4">
+        <label class="form-label">
+          <i class="bi bi-envelope-fill text-primary"></i> อีเมลของคุณ <span class="text-danger">*</span>
+        </label>
         <input type="email" id="empEmail" class="form-control" placeholder="example@yourcompany.com" required>
-        <div class="email-hint mt-2"><i class="bi bi-info-circle-fill"></i> ระบบจะส่งอีเมลแจ้งสถานะงานให้คุณทุกครั้งที่มีการอัปเดต</div>
+        <div class="email-hint mt-2">
+          <i class="bi bi-info-circle-fill text-primary"></i>
+          ระบบจะส่งอีเมลแจ้งสถานะงานให้คุณทุกครั้งที่มีการอัปเดต
+        </div>
       </div>
 
-      <h5 class="mt-5 mb-4 text-primary fw-bold border-bottom pb-2"><i class="bi bi-tools"></i> 2. รายละเอียดปัญหา</h5>
+      <!-- ── Section 2: รายละเอียดปัญหา ── -->
+      <h5 class="section-heading"><i class="bi bi-tools"></i> 2. รายละเอียดปัญหา</h5>
+
       <form id="itForm" novalidate>
-        <div class="row bg-light p-3 rounded mb-3 form-highlight">
-          <div class="col-md-4 mb-3">
-            <label class="form-label text-muted small">เบอร์โทรติดต่อ <span class="text-danger">*</span></label>
-            <input type="text" id="contactPhone" class="form-control" placeholder="เช่น 108" required>
-          </div>
-          <div class="col-md-4 mb-3">
-            <label class="form-label text-muted small">รหัสทรัพย์สิน <span id="assetAutoLabel" class="badge bg-success ms-1" style="display:none;font-size:10px;">auto</span></label>
-            <input type="text" id="assetTag" class="form-control" placeholder="เช่น IE-IT-PC-N001">
-            <div id="assetTagHint" style="display:none;"><small class="text-success"><i class="bi bi-check-circle-fill"></i> ดึงอัตโนมัติ — แก้ไขได้</small></div>
-          </div>
-          <div class="col-md-4 mb-3">
-            <label class="form-label text-muted small">ระดับความด่วน <span class="text-danger">*</span></label>
-            <select id="priority" class="form-select" required>
-              <option value="ทั่วไป">🟢 ทั่วไป</option>
-              <option value="ปานกลาง">🟡 ปานกลาง</option>
-              <option value="ด่วนมาก">🔴 ด่วนมาก</option>
-            </select>
+
+        <!-- ── Grid: เบอร์ / เลขทะเบียน / ความด่วน / เลข Asset ── -->
+        <div class="form-highlight mb-3">
+          <div class="row g-3">
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label">เบอร์โทรติดต่อ <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-telephone text-primary"></i></span>
+                <input type="text" id="contactPhone" class="form-control" placeholder="เช่น 108" required>
+              </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label">
+                เลขทะเบียน
+                <span id="assetAutoLabel" class="badge bg-success ms-1" style="display:none;font-size:10px;">auto</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-card-text text-primary"></i></span>
+                <input type="text" id="assetTag" class="form-control" placeholder="เช่น IE-IT-PC-N001">
+              </div>
+              <div id="assetTagHint" style="display:none;" class="mt-1">
+                <small class="text-success"><i class="bi bi-check-circle-fill"></i> ดึงอัตโนมัติ — แก้ไขได้</small>
+              </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label">ระดับความด่วน <span class="text-danger">*</span></label>
+              <select id="priority" class="form-select" required>
+                <option value="ทั่วไป">🟢 ทั่วไป</option>
+                <option value="ปานกลาง">🟡 ปานกลาง</option>
+                <option value="ด่วนมาก">🔴 ด่วนมาก</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label">
+                <i class="bi bi-upc-scan text-primary"></i> เลข Asset
+              </label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-hash text-primary"></i></span>
+                <input type="text" id="assetNumber" class="form-control" placeholder="เช่น AST-2024-001">
+              </div>
+            </div>
+
           </div>
         </div>
 
+        <!-- ── หมวดหมู่ปัญหา ── -->
         <div class="mb-3">
-          <label class="form-label text-muted small">หมวดหมู่ปัญหา <span class="text-danger">*</span></label>
+          <label class="form-label">หมวดหมู่ปัญหา <span class="text-danger">*</span></label>
           <select id="issueType" class="form-select fw-bold text-primary" onchange="toggleNewPcSection()" required>
             <option value="">-- เลือกหมวดหมู่ --</option>
             <option value="Hardware">🛠️ แจ้งซ่อมอุปกรณ์ (คอมฯ, ปริ้นเตอร์)</option>
@@ -181,33 +533,41 @@
           </select>
         </div>
 
+        <!-- ── รายละเอียดอาการ ── -->
         <div class="mb-4">
-          <label class="form-label text-muted small">รายละเอียดอาการที่พบ <span class="text-danger">*</span></label>
-          <textarea id="issueDetail" class="form-control" rows="3" required placeholder="อธิบายอาการ..."></textarea>
+          <label class="form-label">รายละเอียดอาการที่พบ <span class="text-danger">*</span></label>
+          <textarea id="issueDetail" class="form-control" rows="4" required
+            placeholder="อธิบายอาการ เช่น หน้าจอค้าง เปิดไม่ติด หรือ error message ที่พบ..."></textarea>
         </div>
 
-        <!-- ════════════════════════════════════════════════
-             ส่วน Request New PC (ปรับปรุงใหม่)
-        ════════════════════════════════════════════════ -->
+        <!-- ══════════════════════════════════════
+             ส่วน Request New PC
+        ══════════════════════════════════════ -->
         <div id="newPcSection" style="display:none;">
-          <div class="border border-warning rounded-3 p-4 mb-4" style="background:#fffdf0;">
-            <h5 class="text-warning fw-bold mb-4"><i class="bi bi-laptop"></i> ข้อมูลพิจารณาขอเครื่องใหม่</h5>
+          <div class="newpc-box">
+            <h5><i class="bi bi-laptop"></i> ข้อมูลพิจารณาขอเครื่องใหม่</h5>
 
-            <!-- แนบรูปเครื่องเก่า -->
-            <div class="mb-4">
-              <label class="form-label small fw-semibold">📷 แนบรูปถ่ายเครื่องเก่า <span class="text-danger">* (บังคับ)</span></label>
-              <input type="file" id="oldPcPhoto" class="form-control" accept="image/*">
-            </div>
-
-            <!-- เหตุผลความจำเป็น -->
-            <div class="mb-4">
-              <label class="form-label small fw-semibold">📝 เหตุผลความจำเป็น</label>
-              <textarea id="reasonNewPc" class="form-control" rows="2" placeholder="เช่น เครื่องเก่าเกิน 5 ปี, ประสิทธิภาพต่ำ ไม่รองรับงาน..."></textarea>
-            </div>
-
-            <!-- ════ ประเภทเครื่อง (Dropdown ใหม่) ════ -->
+            <!-- แนบรูป -->
             <div class="mb-3">
-              <label class="form-label small fw-semibold">
+              <label class="form-label fw-semibold">
+                📷 แนบรูปถ่ายเครื่องเก่า <span class="text-danger">* (บังคับ)</span>
+              </label>
+              <input type="file" id="oldPcPhoto" class="form-control" accept="image/*">
+              <div class="mt-1">
+                <small class="text-muted"><i class="bi bi-info-circle"></i> รองรับ JPG, PNG — ขนาดไม่เกิน 10 MB</small>
+              </div>
+            </div>
+
+            <!-- เหตุผล -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">📝 เหตุผลความจำเป็น</label>
+              <textarea id="reasonNewPc" class="form-control" rows="2"
+                placeholder="เช่น เครื่องเก่าเกิน 5 ปี, ประสิทธิภาพต่ำ ไม่รองรับงาน..."></textarea>
+            </div>
+
+            <!-- ประเภทเครื่อง -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
                 🖥️ ประเภทเครื่องที่ต้องการ <span class="text-danger">*</span>
               </label>
               <select id="pcTypeSelect" class="form-select" onchange="onPcTypeChange()" required>
@@ -217,50 +577,116 @@
               </select>
             </div>
 
-            <!-- ════ Checkbox โปรแกรม (แสดงตามประเภทที่เลือก) ════ -->
+            <!-- โปรแกรมที่ติดตั้ง -->
             <div id="softwareSection" style="display:none;">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <label class="form-label small fw-semibold mb-0">
-                  📦 เลือกโปรแกรมที่ต้องการติดตั้ง
-                  <span id="swSelectedCount" class="sw-selected-count ms-2"></span>
-                </label>
-                <button type="button" class="btn btn-link btn-sm p-0 text-secondary" onclick="clearAllSoftware()">
-                  <i class="bi bi-x-circle"></i> ล้างทั้งหมด
-                </button>
+              <label class="form-label fw-semibold mb-2">
+                📦 โปรแกรมที่จะติดตั้งพร้อมเครื่อง
+                <span class="badge bg-info text-white ms-1" style="font-size:10px;">รายการมาตรฐาน</span>
+              </label>
+              <div id="softwareGrid" class="software-display-box"></div>
+              <div class="sw-info-note mt-2">
+                <i class="bi bi-info-circle text-primary"></i>
+                รายการโปรแกรมด้านบนคือมาตรฐานที่ IT จะติดตั้งให้อัตโนมัติตามประเภทเครื่องที่เลือก
               </div>
-              <div id="softwareGrid" class="software-grid"></div>
             </div>
-
           </div>
         </div>
         <!-- ════ end newPcSection ════ -->
 
-        <button type="button" class="btn btn-primary w-100 py-3 fs-5 shadow-sm" id="submitBtn" onclick="prepareSubmit()">
-          <i class="bi bi-send-fill"></i> ยืนยันการส่งข้อมูล
+        <!-- ── Submit Button ── -->
+        <button type="button" class="btn btn-primary w-100 shadow-sm" id="submitBtn" onclick="prepareSubmit()">
+          <i class="bi bi-send-fill me-2"></i>ยืนยันการส่งข้อมูล
         </button>
+
       </form>
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════
+       TAB 2 — ติดตามสถานะ
+  ══════════════════════════════════════ -->
   <div id="trackTab" class="section-div card p-4">
-    <div class="card-body text-center">
-      <h4 class="mb-4 text-primary fw-bold border-bottom pb-2"><i class="bi bi-binoculars"></i> ตรวจสอบสถานะการแจ้งซ่อม</h4>
-      <div class="input-group mb-4 mx-auto" style="max-width:420px;">
-        <input type="text" id="trackEmpId" class="form-control" placeholder="กรอกรหัสพนักงานของคุณ..." onkeyup="if(event.keyCode===13) loadMyTickets()">
-        <button class="btn btn-primary" onclick="loadMyTickets()"><i class="bi bi-search"></i> ค้นหา</button>
+    <div class="card-body p-0">
+      <h4 class="section-heading">
+        <i class="bi bi-binoculars"></i> ตรวจสอบสถานะการแจ้งซ่อม
+      </h4>
+
+      <!-- Search bar -->
+      <div class="input-group mb-4" style="max-width:440px; margin: 0 auto 24px;">
+        <span class="input-group-text"><i class="bi bi-person-circle text-primary"></i></span>
+        <input type="text" id="trackEmpId" class="form-control"
+          placeholder="กรอกรหัสพนักงาน..."
+          onkeyup="if(event.keyCode===13) loadMyTickets()">
+        <button class="btn btn-primary px-4" onclick="loadMyTickets()">
+          <i class="bi bi-search"></i>
+          <span class="d-none d-sm-inline ms-1">ค้นหา</span>
+        </button>
       </div>
-      <div class="table-responsive text-start">
-        <table class="table table-hover align-middle" id="myTicketTable">
-          <thead class="table-light"><tr><th>Ticket ID</th><th>วันที่แจ้ง</th><th>ปัญหา</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th><th>แจ้งซ่อมนอก</th><th>หมายเหตุจาก IT</th></tr></thead>
-          <tbody><tr><td colspan="7" class="text-center text-muted py-4">กรุณากรอกรหัสพนักงานเพื่อดูประวัติ</td></tr></tbody>
+
+      <!-- Table -->
+      <div class="table-responsive rounded-3 border" style="border-color:#e2e8f0 !important;">
+        <table class="table table-hover align-middle mb-0" id="myTicketTable">
+          <thead class="table-light">
+            <tr>
+              <th>Ticket ID</th>
+              <th>วันที่แจ้ง</th>
+              <th>ปัญหา</th>
+              <th>สถานะ</th>
+              <th class="d-none d-md-table-cell">ผู้รับผิดชอบ</th>
+              <th class="d-none d-sm-table-cell">ซ่อมนอก</th>
+              <th>หมายเหตุ IT</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-3 d-block mb-2 opacity-50"></i>
+                กรุณากรอกรหัสพนักงานเพื่อดูประวัติ
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
+
     </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ══ Submit Progress Overlay ══ -->
+<div id="submitOverlay">
+  <div class="submit-card">
+    <div class="submit-spinner" id="overlaySpinner"></div>
+    <div class="submit-title">กำลังบันทึกข้อมูล...</div>
+    <div class="submit-subtitle">กรุณารอสักครู่ อย่าปิดหน้าต่างนี้</div>
+    <ul class="step-list">
+      <li id="step1">
+        <div class="step-icon pending" id="step1Icon"><i class="bi bi-check-lg"></i></div>
+        <span class="step-label" id="step1Label">ตรวจสอบข้อมูล</span>
+      </li>
+      <li id="step2">
+        <div class="step-icon pending" id="step2Icon"><i class="bi bi-check-lg"></i></div>
+        <span class="step-label" id="step2Label">อัปโหลดไฟล์รูปภาพ</span>
+      </li>
+      <li id="step3">
+        <div class="step-icon pending" id="step3Icon"><i class="bi bi-check-lg"></i></div>
+        <span class="step-label" id="step3Label">บันทึก Ticket ลงระบบ</span>
+      </li>
+      <li id="step4">
+        <div class="step-icon pending" id="step4Icon"><i class="bi bi-check-lg"></i></div>
+        <span class="step-label" id="step4Label">ส่งอีเมลแจ้งเตือน</span>
+      </li>
+    </ul>
   </div>
 </div>
 
-<div id="loadingOverlay" class="loading-overlay" style="display: flex;">
-  <div class="text-center text-white"><div class="spinner-border mb-2" style="width: 3rem; height: 3rem;" role="status"></div><h5>กำลังเชื่อมต่อฐานข้อมูล...</h5></div>
+<!-- ══ Initial DB Loading Overlay ══ -->
+<div id="loadingOverlay" class="loading-overlay" style="display:flex;">
+  <div class="text-center text-white">
+    <div class="spinner-border mb-3" style="width:3rem;height:3rem;" role="status"></div>
+    <h5 class="fw-semibold">กำลังเชื่อมต่อฐานข้อมูล...</h5>
+    <p class="opacity-75 small">กรุณารอสักครู่</p>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

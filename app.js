@@ -3,28 +3,28 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxwRlbSo_k9_HThI_P4jbWU
 let allEmployees = [];
 
 // ════════════════════════════════════════════════════════════
-//  📦 รายการโปรแกรมแยกตามประเภทเครื่อง
+//  📦 รายการโปรแกรมแยกตามประเภทเครื่อง (display-only)
 // ════════════════════════════════════════════════════════════
 const SOFTWARE_LIST = {
   office: [
-    { id: "sw_Office",      icon: "📝", name: "Microsoft Office" },
-    { id: "sw_acrobat",   icon: "📄", name: "Adobe Acrobat Reader" },
-    { id: "sw_line",      icon: "💚", name: "LINE" },
-    { id: "sw_SPA",      icon: "🗜️", name: "SAP" },
-    { id: "sw_Prosoft", icon: "🛡️", name: "Prosoft" },
-    { id: "sw_vpn",       icon: "🔒", name: "VPN Client" },
-    { id: "sw_anydesk",   icon: "🖥️", name: "AnyDesk / Remote" },
+    { icon: "📝", name: "Microsoft Office" },
+    { icon: "📄", name: "Adobe Acrobat Reader" },
+    { icon: "💚", name: "LINE" },
+    { icon: "🗜️", name: "SAP" },
+    { icon: "🛡️", name: "Prosoft" },
+    { icon: "🔒", name: "VPN Client" },
+    { icon: "🖥️", name: "AnyDesk / Remote" },
   ],
   engineering: [
-    { id: "sw_G-Star",   icon: "📐", name: "G-Star/AutoCAD" },
-    { id: "sw_Solid-Edge",icon: "🔩", name: "Solid Edge/SolidWorks" },
-    { id: "sw_Office",      icon: "📝", name: "Microsoft Office" },
-    { id: "sw_acrobat",   icon: "📄", name: "Adobe Acrobat X Pro" },
-    { id: "sw_line",      icon: "💚", name: "LINE" },
-    { id: "sw_SPA",      icon: "🗜️", name: "SAP" },
-    { id: "sw_Prosoft", icon: "🛡️", name: "Prosoft" },
-    { id: "sw_vpn",       icon: "🔒", name: "VPN Client" },
-    { id: "sw_anydesk",   icon: "🖥️", name: "AnyDesk / Remote" },
+    { icon: "📐", name: "G-Star/AutoCAD" },
+    { icon: "🔩", name: "Solid Edge/SolidWorks" },
+    { icon: "📝", name: "Microsoft Office" },
+    { icon: "📄", name: "Adobe Acrobat X Pro" },
+    { icon: "💚", name: "LINE" },
+    { icon: "🗜️", name: "SAP" },
+    { icon: "🛡️", name: "Prosoft" },
+    { icon: "🔒", name: "VPN Client" },
+    { icon: "🖥️", name: "AnyDesk / Remote" },
   ],
 };
 
@@ -94,6 +94,7 @@ function selectEmployee(emp) {
   document.getElementById('d_empPlant').innerText  = emp.plant;
   document.getElementById('employeeInfoBox').style.display = 'block';
 
+  // ✅ assetTag → เลขทะเบียน
   let assetInput = document.getElementById('assetTag');
   if (emp.assetTag && emp.assetTag.trim() !== '') {
     assetInput.value = emp.assetTag;
@@ -115,6 +116,7 @@ function selectEmployee(emp) {
 document.getElementById('assetTag').addEventListener('input', function () {
   this.classList.remove('field-autofilled');
 });
+
 // ใช้ pointerdown แทน click → ไม่ block native select picker บนมือถือ
 document.addEventListener('pointerdown', e => {
   let input = document.getElementById('searchEmpInput'),
@@ -133,7 +135,6 @@ function toggleNewPcSection() {
   document.getElementById('pcTypeSelect').required = isPC;
 
   if (!isPC) {
-    // Reset PC type & software on hide
     document.getElementById('pcTypeSelect').value = '';
     document.getElementById('softwareSection').style.display = 'none';
     document.getElementById('softwareGrid').innerHTML = '';
@@ -141,10 +142,10 @@ function toggleNewPcSection() {
 }
 
 // ════════════════════════════════════════════════════════════
-//  🖥️ เมื่อเลือกประเภทเครื่อง → render checkbox โปรแกรม
+//  🖥️ เมื่อเลือกประเภทเครื่อง → render software pills (display-only)
 // ════════════════════════════════════════════════════════════
 function onPcTypeChange() {
-  const type = document.getElementById('pcTypeSelect').value;
+  const type    = document.getElementById('pcTypeSelect').value;
   const section = document.getElementById('softwareSection');
   const grid    = document.getElementById('softwareGrid');
 
@@ -155,50 +156,72 @@ function onPcTypeChange() {
   }
 
   const list = SOFTWARE_LIST[type] || [];
+
+  // ✅ render เป็น pill อ่านอย่างเดียว — ไม่มี checkbox
   grid.innerHTML = list.map(sw => `
-    <label class="software-item" for="${sw.id}">
-      <input type="checkbox" id="${sw.id}" value="${sw.name}" onchange="onSwChange(this)">
+    <span class="sw-pill">
       <span class="sw-icon">${sw.icon}</span>
-      <span class="sw-name">${sw.name}</span>
-    </label>
+      <span>${sw.name}</span>
+    </span>
   `).join('');
 
   section.style.display = 'block';
-  updateSwCount();
 }
 
-/** onchange บน checkbox → sync สีกล่อง + นับจำนวน (ไม่ต้องใช้ onclick บน label) */
-function onSwChange(cb) {
-  const label = cb.closest('.software-item');
-  if (label) label.classList.toggle('checked', cb.checked);
-  updateSwCount();
-}
-
-function updateSwCount() {
-  const checked = document.querySelectorAll('#softwareGrid input[type="checkbox"]:checked');
-  const el = document.getElementById('swSelectedCount');
-  el.textContent = checked.length > 0 ? `(เลือกแล้ว ${checked.length} โปรแกรม)` : '';
-}
-
-function clearAllSoftware() {
-  document.querySelectorAll('#softwareGrid input[type="checkbox"]').forEach(cb => {
-    cb.checked = false;
-    const label = cb.closest('.software-item');
-    if (label) label.classList.remove('checked');
-  });
-  updateSwCount();
-}
-
-/** รวบรวมรายชื่อโปรแกรมที่ติ๊กเลือก */
+/** รวบรวมรายชื่อโปรแกรมทั้งหมดของประเภทที่เลือก (ส่งไป backend) */
 function getSelectedSoftware() {
-  const checked = document.querySelectorAll('#softwareGrid input[type="checkbox"]:checked');
-  return Array.from(checked).map(cb => cb.value).join(', ');
+  const type = document.getElementById('pcTypeSelect').value;
+  if (!type) return '';
+  const list = SOFTWARE_LIST[type] || [];
+  return list.map(sw => sw.name).join(', ');
 }
 
 /** ฉลากประเภทเครื่อง */
 function getPcTypeLabel() {
   const sel = document.getElementById('pcTypeSelect');
   return sel.options[sel.selectedIndex]?.text || '';
+}
+
+// ════════════════════════════════════════════════════════════
+//  🔄 Submit Loading Overlay Helpers
+// ════════════════════════════════════════════════════════════
+
+/** เปิด overlay + reset ทุก step กลับเป็น pending */
+function showSubmitOverlay(hasFile) {
+  const overlay = document.getElementById('submitOverlay');
+  overlay.classList.add('active');
+
+  // reset all steps
+  [1,2,3,4].forEach(n => _setStep(n, 'pending'));
+
+  // ถ้าไม่มีไฟล์ → ซ่อน step อัปโหลดรูป
+  document.getElementById('step2').style.display = hasFile ? 'flex' : 'none';
+}
+
+function hideSubmitOverlay() {
+  document.getElementById('submitOverlay').classList.remove('active');
+}
+
+/**
+ * อัปเดตสถานะ step
+ * @param {number} n      - หมายเลข step (1-4)
+ * @param {'pending'|'active'|'done'|'error'} state
+ */
+function _setStep(n, state) {
+  const icon  = document.getElementById(`step${n}Icon`);
+  const label = document.getElementById(`step${n}Label`);
+  icon.className  = `step-icon ${state}`;
+  label.className = `step-label ${state}`;
+
+  if (state === 'active') {
+    icon.innerHTML = '<div class="step-mini-spin"></div>';
+  } else if (state === 'done') {
+    icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+  } else if (state === 'error') {
+    icon.innerHTML = '<i class="bi bi-x-lg"></i>';
+  } else {
+    icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -215,8 +238,8 @@ async function prepareSubmit() {
   if (!document.getElementById('itForm').checkValidity())
     return document.getElementById('itForm').reportValidity();
 
-  let issueType  = document.getElementById('issueType').value;
-  let fileInput  = document.getElementById('oldPcPhoto');
+  let issueType = document.getElementById('issueType').value;
+  let fileInput = document.getElementById('oldPcPhoto');
 
   if (issueType === 'Request_New_PC') {
     if (fileInput.files.length === 0)
@@ -225,52 +248,80 @@ async function prepareSubmit() {
       return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาเลือกประเภทเครื่องด้วยครับ', 'warning');
   }
 
+  const hasFile = issueType === 'Request_New_PC' && fileInput.files.length > 0;
+
+  // ── disable ปุ่ม + เปิด overlay ──
   let btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.innerHTML = 'กำลังประมวลผล...';
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> กำลังบันทึก...';
+  showSubmitOverlay(hasFile);
 
-  // รวมข้อมูล requiredSoftware จาก checkbox + ประเภทเครื่อง
+  // ── Step 1: ตรวจสอบข้อมูล ──
+  _setStep(1, 'active');
+  await _delay(400);
+
   const selectedSoftware = getSelectedSoftware();
   const pcTypeLabel      = getPcTypeLabel();
 
   let formData = {
-    empId:           document.getElementById('empId').value,
-    empName:         document.getElementById('empName').value,
-    empDept:         document.getElementById('empDept').value,
-    empPosition:     document.getElementById('empPosition').value,
-    empPlant:        document.getElementById('empPlant').value,
-    empEmail:        emailVal,
-    contactPhone:    document.getElementById('contactPhone').value,
-    assetTag:        document.getElementById('assetTag').value,
-    priority:        document.getElementById('priority').value,
-    issueType:       issueType,
-    issueDetail:     document.getElementById('issueDetail').value,
-    reasonNewPc:     document.getElementById('reasonNewPc').value,
-    // ✅ บันทึกประเภทเครื่อง + รายการโปรแกรมที่เลือก
-    pcType:          pcTypeLabel,
+    empId:            document.getElementById('empId').value,
+    empName:          document.getElementById('empName').value,
+    empDept:          document.getElementById('empDept').value,
+    empPosition:      document.getElementById('empPosition').value,
+    empPlant:         document.getElementById('empPlant').value,
+    empEmail:         emailVal,
+    contactPhone:     document.getElementById('contactPhone').value,
+    assetTag:         document.getElementById('assetTag').value,
+    assetNumber:      document.getElementById('assetNumber').value,
+    priority:         document.getElementById('priority').value,
+    issueType:        issueType,
+    issueDetail:      document.getElementById('issueDetail').value,
+    reasonNewPc:      document.getElementById('reasonNewPc').value,
+    pcType:           pcTypeLabel,
     requiredSoftware: selectedSoftware,
     fileName: '', mimeType: '', fileData: ''
   };
 
-  if (issueType === 'Request_New_PC' && fileInput.files.length > 0) {
-    let reader = new FileReader();
-    reader.onload = function(e) {
-      formData.fileData  = e.target.result.split(',')[1];
-      formData.fileName  = fileInput.files[0].name;
-      formData.mimeType  = fileInput.files[0].type;
-      sendData(formData);
-    };
-    reader.onerror = () => {
-      Swal.fire('ผิดพลาด', 'อ่านไฟล์ไม่ได้', 'error');
+  _setStep(1, 'done');
+
+  // ── Step 2: อ่านไฟล์รูป (ถ้ามี) ──
+  if (hasFile) {
+    _setStep(2, 'active');
+    try {
+      const fileResult = await _readFileAsBase64(fileInput.files[0]);
+      formData.fileData = fileResult.data;
+      formData.fileName = fileInput.files[0].name;
+      formData.mimeType = fileInput.files[0].type;
+      _setStep(2, 'done');
+    } catch(err) {
+      _setStep(2, 'error');
+      hideSubmitOverlay();
+      Swal.fire('ผิดพลาด', 'อ่านไฟล์รูปไม่ได้', 'error');
       resetBtn();
-    };
-    reader.readAsDataURL(fileInput.files[0]);
-  } else {
-    sendData(formData);
+      return;
+    }
   }
+
+  // ── Step 3 & 4: ส่งข้อมูล ──
+  await sendData(formData);
 }
 
+/** อ่านไฟล์เป็น Promise */
+function _readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve({ data: e.target.result.split(',')[1] });
+    reader.onerror = () => reject(new Error('read error'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** หน่วง ms */
+function _delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 async function sendData(formData) {
+  // ── Step 3: บันทึก Ticket ──
+  _setStep(3, 'active');
   try {
     const res    = await fetch(API_URL, {
       method: "POST",
@@ -278,19 +329,38 @@ async function sendData(formData) {
       body: JSON.stringify({ action: "saveTicket", data: formData })
     });
     const result = await res.json();
+
     if (result.success) {
-      Swal.fire(
-        'สำเร็จ! 🎉',
-        `Ticket ID: <b>${result.ticketId}</b><br><small>แจ้งเตือนไปที่ ${_esc(formData.empEmail)}</small>`,
-        'success'
-      );
+      _setStep(3, 'done');
+
+      // ── Step 4: ส่งอีเมล (simulate — backend ทำเอง) ──
+      _setStep(4, 'active');
+      await _delay(700);
+      _setStep(4, 'done');
+
+      await _delay(400);
+      hideSubmitOverlay();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'บันทึกสำเร็จ! 🎉',
+        html: `Ticket ID: <b class="text-primary">${result.ticketId}</b><br>
+               <small class="text-muted">แจ้งเตือนไปที่ ${_esc(formData.empEmail)}</small>`,
+        confirmButtonText: 'รับทราบ'
+      });
       resetForm();
     } else {
-      Swal.fire('เกิดข้อผิดพลาด', result.error, 'error');
+      _setStep(3, 'error');
+      await _delay(300);
+      hideSubmitOverlay();
+      Swal.fire('เกิดข้อผิดพลาด', result.error || 'ไม่สามารถบันทึกได้', 'error');
       resetBtn();
     }
   } catch (err) {
-    Swal.fire('ผิดพลาด', 'เซิร์ฟเวอร์ขัดข้อง', 'error');
+    _setStep(3, 'error');
+    await _delay(300);
+    hideSubmitOverlay();
+    Swal.fire('ผิดพลาด', 'เซิร์ฟเวอร์ขัดข้อง กรุณาลองใหม่อีกครั้ง', 'error');
     resetBtn();
   }
 }
@@ -337,13 +407,13 @@ async function loadMyTickets() {
       let extCell = r.isExternal ? '<span class="badge bg-info text-dark">แจ้งซ่อมนอก</span>' : '—';
       tbody.innerHTML += `
         <tr>
-          <td class="fw-bold text-primary">${_esc(r.ticketId)}</td>
-          <td>${r.date.split(' ')[0]}</td>
-          <td>${_esc(r.issue)}</td>
+          <td class="fw-bold text-primary" style="white-space:nowrap;">${_esc(r.ticketId)}</td>
+          <td style="white-space:nowrap;">${r.date.split(' ')[0]}</td>
+          <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(r.issue)}</td>
           <td><span class="badge ${statusMap[r.status]}">${_esc(r.status)}</span></td>
-          <td>${_esc(r.assignee || '—')}</td>
-          <td>${extCell}</td>
-          <td>${_esc(r.itNote || '—')}</td>
+          <td class="d-none d-md-table-cell">${_esc(r.assignee || '—')}</td>
+          <td class="d-none d-sm-table-cell">${extCell}</td>
+          <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(r.itNote || '—')}</td>
         </tr>`;
     });
   } catch (err) {

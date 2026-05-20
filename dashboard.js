@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxwRlbSo_k9_HThI_P4jbWUpJ43dIsJ9GH8GzCU0X-BwdyHjXvXublUZaX9-4fuDucI/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbynnqb_VtOh783A2d9_5TLkySHepKGcstRrnkZpCcjpdHECdNg1oPgFlKu2p0pCRJXI/exec";
 
 let charts = { priority: null, issueType: null, plant: null };
 let globalTickets = [];
