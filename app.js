@@ -16,8 +16,8 @@ const SOFTWARE_LIST = {
     { icon: "🖥️", name: "AnyDesk / Remote" },
   ],
   engineering: [
-    { icon: "📐", name: "G-Star/AutoCAD" },
-    { icon: "🔩", name: "Solid Edge/SolidWorks" },
+    { icon: "📐", name: "G-Star" },
+    { icon: "🔩", name: "Solid Edge" },
     { icon: "📝", name: "Microsoft Office" },
     { icon: "📄", name: "Adobe Acrobat X Pro" },
     { icon: "💚", name: "LINE" },
