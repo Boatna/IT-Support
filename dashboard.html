@@ -8,126 +8,403 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    :root { --bg-deep: #1a1a27; --bg-card: #27293d; --bg-input: #1e1e2f; --border: #3d3f54; --text-muted-c:#9a9a9a; }
-    body { font-family: 'Prompt', sans-serif; background: var(--bg-deep); color: #e4e4e4; }
+    /* ══════════════════════════════════════════
+       BASE
+    ══════════════════════════════════════════ */
+    :root {
+      --bg-deep:      #1a1a27;
+      --bg-card:      #27293d;
+      --bg-input:     #1e1e2f;
+      --border:       #3d3f54;
+      --text-muted-c: #9a9a9a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: var(--bg-deep);
+      color: #e4e4e4;
+    }
+
+    /* ── Login ── */
     #appContent { display: none; }
-    .login-box { background: var(--bg-card); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.5); border: 1px solid var(--border); }
-    .stat-card { border-radius: 12px; border: none; color: white; }
+
+    .login-box {
+      background:    var(--bg-card);
+      border-radius: 20px;
+      box-shadow:    0 10px 30px rgba(0,0,0,.5);
+      border:        1px solid var(--border);
+    }
+    .login-logo { font-size: 64px; }
+
+    /* ── Stat cards ── */
+    .stat-card { border-radius: 12px; border: none; color: #fff; }
     .bg-gradient-primary { background: linear-gradient(135deg, #1e88e5, #1565c0); }
     .bg-gradient-danger   { background: linear-gradient(135deg, #ef5350, #c62828); }
-    .bg-gradient-warning  { background: linear-gradient(135deg, #ffb300, #f39c12); color: white; }
+    .bg-gradient-warning  { background: linear-gradient(135deg, #ffb300, #f39c12); color: #fff; }
     .bg-gradient-success  { background: linear-gradient(135deg, #43a047, #2e7d32); }
-    .panel-container { background: var(--bg-card); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-    .table-dark th { background-color: var(--bg-input) !important; border-bottom: 2px solid var(--border); color: var(--text-muted-c); }
-    .table-hover tbody tr:hover { background-color: #32354a !important; color: white; cursor: pointer; }
-    td { border-color: var(--border) !important; color: #e4e4e4; }
-    .modal-content { background-color: var(--bg-card); color: white; border: 1px solid var(--border); }
+    .stat-card h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; margin: 0; }
+    .stat-card p  { font-size: clamp(0.78rem, 2vw, 0.9rem); opacity: .9; }
+
+    /* ── Panel ── */
+    .panel-container {
+      background:    var(--bg-card);
+      border-radius: 15px;
+      padding:       20px;
+      margin-bottom: 20px;
+    }
+
+    /* ── DataTables dark theme ── */
+    .dataTables_wrapper .dataTables_filter input,
+    .dataTables_wrapper .dataTables_length select {
+      background:   var(--bg-input);
+      border:       1px solid var(--border);
+      color:        #e4e4e4;
+      border-radius: 6px;
+      padding:      4px 8px;
+    }
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_filter label,
+    .dataTables_wrapper .dataTables_length label { color: var(--text-muted-c); }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+      color: #e4e4e4 !important;
+      border-radius: 6px !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+      background: #1e88e5 !important;
+      border-color: #1e88e5 !important;
+      color: #fff !important;
+    }
+
+    /* ── Table ── */
+    .table-dark th {
+      background-color: var(--bg-input) !important;
+      border-bottom: 2px solid var(--border);
+      color: var(--text-muted-c);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    .table-hover tbody tr:hover { background-color: #32354a !important; color: #fff; cursor: pointer; }
+    td { border-color: var(--border) !important; color: #e4e4e4; vertical-align: middle; }
+
+    /* ── Modal ── */
+    .modal-content {
+      background-color: var(--bg-card);
+      color: #fff;
+      border: 1px solid var(--border);
+    }
     .modal-header, .modal-footer { border-color: var(--border); }
-    .form-control, .form-select { background-color: var(--bg-input); border: 1px solid var(--border); color: white; }
-    .form-control:focus, .form-select:focus { background-color: var(--bg-input); color: white; border-color: #1e88e5; box-shadow: none; }
-    .detail-box { background: var(--bg-input); padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-    .detail-label { color: var(--text-muted-c); font-size: .85rem; }
-    .detail-value { font-weight: 500; font-size: 1rem; margin-bottom: 10px; }
+    .form-control, .form-select {
+      background-color: var(--bg-input);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-family: 'Prompt', sans-serif;
+    }
+    .form-control:focus, .form-select:focus {
+      background-color: var(--bg-input);
+      color: #fff;
+      border-color: #1e88e5;
+      box-shadow: none;
+    }
+    .form-control::placeholder { color: #666; }
+    textarea.form-control { resize: vertical; }
+
+    /* ── Detail boxes in modal ── */
+    .detail-box {
+      background:    var(--bg-input);
+      padding:       15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    .detail-label { color: var(--text-muted-c); font-size: .82rem; margin-bottom: 2px; }
+    .detail-value { font-weight: 500; font-size: .95rem; margin-bottom: 10px; }
+    .detail-value:last-child { margin-bottom: 0; }
+
+    /* ── Badge in table ── */
+    .badge { font-family: 'Prompt', sans-serif; font-weight: 500; }
+
+    /* ── Buttons ── */
+    .btn-outline-info:hover { color: #fff; }
+    .dt-buttons .btn { font-family: 'Prompt', sans-serif; font-size: 0.82rem; }
+
+    /* ── Form switch ── */
+    .form-check-input:checked { background-color: #1e88e5; border-color: #1e88e5; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar       { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: #3d3f54; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #5a5d7a; }
+
+    /* ══════════════════════════════════════════
+       MOBILE
+    ══════════════════════════════════════════ */
+    @media (max-width: 575px) {
+      .container-fluid { padding-left: 12px !important; padding-right: 12px !important; }
+      .panel-container { padding: 14px; }
+      .stat-card .card-body { padding: 16px 12px; }
+    }
   </style>
 </head>
 <body>
 
-<div id="loginScreen" class="container mt-5" style="max-width:400px; padding-top:10vh;">
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen" class="container mt-5" style="max-width:400px; padding-top:8vh;">
   <div class="login-box p-5 text-center">
-    <div class="login-logo mb-3" style="font-size:64px;">🛡️</div>
+    <div class="login-logo mb-3">🛡️</div>
     <h3 class="fw-bold text-info mb-1">IT Control Center</h3>
     <p class="text-muted mb-4" style="font-size:13px;">กรุณากรอก PIN เพื่อเข้าสู่ระบบ</p>
-    <input type="password" id="pinInput" class="form-control mb-4 text-center fs-5 rounded-pill" placeholder="PIN Code" maxlength="8" onkeyup="if(event.keyCode===13) checkPin()" style="letter-spacing:6px;">
-    <button class="btn btn-info w-100 rounded-pill text-white fw-bold py-2" onclick="checkPin()">เข้าสู่ระบบ</button>
-    <p class="text-muted mt-4" style="font-size:11px;">ระบบสำหรับช่าง IT เท่านั้น<br>พนักงานทั่วไปกลับไปหน้า <a href="index.html" class="text-info">แจ้งซ่อม</a></p>
+    <input
+      type="password"
+      id="pinInput"
+      class="form-control mb-4 text-center fs-5 rounded-pill"
+      placeholder="PIN Code"
+      maxlength="8"
+      onkeyup="if(event.keyCode===13) checkPin()"
+      style="letter-spacing:6px;"
+    >
+    <button class="btn btn-info w-100 rounded-pill text-white fw-bold py-2" onclick="checkPin()">
+      เข้าสู่ระบบ
+    </button>
+    <p class="text-muted mt-4" style="font-size:11px;">
+      ระบบสำหรับช่าง IT เท่านั้น<br>
+      พนักงานทั่วไปกลับไปหน้า <a href="index.html" class="text-info">แจ้งซ่อม</a>
+    </p>
   </div>
 </div>
 
+<!-- ══ DASHBOARD ══ -->
 <div id="appContent" class="container-fluid mt-4 mb-5 px-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold m-0 text-white"><i class="bi bi-speedometer2 text-info"></i> IT Control Center Dashboard</h3>
-    <button class="btn btn-outline-info rounded-pill" onclick="refreshData()"><i class="bi bi-arrow-clockwise"></i> Sync Data</button>
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h3 class="fw-bold m-0 text-white">
+      <i class="bi bi-speedometer2 text-info"></i> IT Control Center Dashboard
+    </h3>
+    <button class="btn btn-outline-info rounded-pill" onclick="refreshData()">
+      <i class="bi bi-arrow-clockwise"></i> Sync Data
+    </button>
   </div>
 
+  <!-- ── Stats Row ── -->
   <div class="row text-center mb-4">
-    <div class="col-md-3 mb-3"><div class="card stat-card bg-gradient-primary shadow"><div class="card-body"><h1 id="statTotal">0</h1><p class="m-0">Ticket ทั้งหมด</p></div></div></div>
-    <div class="col-md-3 mb-3"><div class="card stat-card bg-gradient-danger shadow"><div class="card-body"><h1 id="statPending">0</h1><p class="m-0">รอดำเนินการ</p></div></div></div>
-    <div class="col-md-3 mb-3"><div class="card stat-card bg-gradient-warning shadow"><div class="card-body"><h1 id="statDoing">0</h1><p class="m-0">กำลังดำเนินการ</p></div></div></div>
-    <div class="col-md-3 mb-3"><div class="card stat-card bg-gradient-success shadow"><div class="card-body"><h1 id="statDone">0</h1><p class="m-0">ซ่อมเสร็จสิ้น</p></div></div></div>
+    <div class="col-6 col-md-3 mb-3">
+      <div class="card stat-card bg-gradient-primary shadow">
+        <div class="card-body">
+          <h1 id="statTotal">0</h1>
+          <p class="m-0">Ticket ทั้งหมด</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3">
+      <div class="card stat-card bg-gradient-danger shadow">
+        <div class="card-body">
+          <h1 id="statPending">0</h1>
+          <p class="m-0">รอดำเนินการ</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3">
+      <div class="card stat-card bg-gradient-warning shadow">
+        <div class="card-body">
+          <h1 id="statDoing">0</h1>
+          <p class="m-0">กำลังดำเนินการ</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3">
+      <div class="card stat-card bg-gradient-success shadow">
+        <div class="card-body">
+          <h1 id="statDone">0</h1>
+          <p class="m-0">ซ่อมเสร็จสิ้น</p>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- ── Charts Row ── -->
   <div class="row mb-3">
-    <div class="col-md-3"><div class="panel-container h-100"><h6 class="text-info">สัดส่วนความสำคัญ</h6><canvas id="priorityChart" style="max-height:250px;"></canvas></div></div>
-    <div class="col-md-4"><div class="panel-container h-100"><h6 class="text-info">สัดส่วนตาม Plant</h6><canvas id="plantChart" style="max-height:250px;"></canvas></div></div>
-    <div class="col-md-5"><div class="panel-container h-100"><h6 class="text-info">หมวดหมู่ปัญหาที่พบ</h6><canvas id="issueTypeChart" style="max-height:250px;"></canvas></div></div>
+    <div class="col-md-3 mb-3">
+      <div class="panel-container h-100">
+        <h6 class="text-info mb-3"><i class="bi bi-pie-chart-fill me-1"></i>สัดส่วนความสำคัญ</h6>
+        <canvas id="priorityChart" style="max-height:230px;"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="panel-container h-100">
+        <h6 class="text-info mb-3"><i class="bi bi-building me-1"></i>สัดส่วนตาม Plant</h6>
+        <canvas id="plantChart" style="max-height:230px;"></canvas>
+      </div>
+    </div>
+    <div class="col-md-5 mb-3">
+      <div class="panel-container h-100">
+        <h6 class="text-info mb-3"><i class="bi bi-bar-chart-fill me-1"></i>หมวดหมู่ปัญหาที่พบ</h6>
+        <canvas id="issueTypeChart" style="max-height:230px;"></canvas>
+      </div>
+    </div>
   </div>
 
+  <!-- ── Ticket Table ── -->
   <div class="panel-container">
-    <h5 class="fw-bold text-white mb-3">รายการแจ้งซ่อม</h5>
+    <h5 class="fw-bold text-white mb-3">
+      <i class="bi bi-list-task text-info me-2"></i>รายการแจ้งซ่อม
+    </h5>
     <div class="table-responsive">
       <table class="table table-hover text-nowrap align-middle w-100" id="itTicketTable">
-        <thead class="table-dark"><tr><th>Ticket ID</th><th>ผู้แจ้ง</th><th>Plant/เบอร์ติดต่อ</th><th>ปัญหาที่พบ</th><th>ความด่วน</th><th>สถานะ</th><th class="text-center">Manage</th></tr></thead>
+        <thead class="table-dark">
+          <tr>
+            <th>Ticket ID</th>
+            <th>ผู้แจ้ง</th>
+            <th>Plant / เบอร์ติดต่อ</th>
+            <th>ปัญหาที่พบ</th>
+            <th>ความด่วน</th>
+            <th>สถานะ</th>
+            <th class="text-center">Manage</th>
+          </tr>
+        </thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
-</div>
 
+</div><!-- /appContent -->
+
+<!-- ══ MANAGE MODAL ══ -->
 <div class="modal fade" id="itModal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title fw-bold text-info">Ticket: <span id="m_ticketId"></span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-info">
+          <i class="bi bi-ticket-detailed me-2"></i>Ticket: <span id="m_ticketId"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
       <div class="modal-body p-4">
         <div class="row">
+
+          <!-- ── Left: รายละเอียด ── -->
           <div class="col-md-7 mb-4">
-            <h6 class="text-warning border-bottom border-secondary pb-2 mb-3">ข้อมูลรายละเอียด</h6>
+            <h6 class="text-warning border-bottom border-secondary pb-2 mb-3">
+              <i class="bi bi-info-circle me-1"></i>ข้อมูลรายละเอียด
+            </h6>
+
+            <!-- ข้อมูลผู้แจ้ง -->
             <div class="detail-box">
-              <div class="row">
-                <div class="col-6"><div class="detail-label">ผู้แจ้ง</div><div class="detail-value text-info" id="m_empName"></div></div>
-                <div class="col-6"><div class="detail-label">แผนก / ตำแหน่ง</div><div class="detail-value" id="m_deptPos"></div></div>
-                <div class="col-6"><div class="detail-label">Plant / เบอร์ติดต่อ</div><div class="detail-value" id="m_plantLoc"></div></div>
-                <div class="col-6"><div class="detail-label">รหัส Asset</div><div class="detail-value" id="m_asset"></div></div>
-                <div class="col-12"><div class="detail-label">อีเมลผู้แจ้ง</div><div class="detail-value text-warning" id="m_empEmail"></div></div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <div class="detail-label">ผู้แจ้ง</div>
+                  <div class="detail-value text-info" id="m_empName"></div>
+                </div>
+                <div class="col-6">
+                  <div class="detail-label">แผนก / ตำแหน่ง</div>
+                  <div class="detail-value" id="m_deptPos"></div>
+                </div>
+                <div class="col-6">
+                  <div class="detail-label">Plant / เบอร์ติดต่อ</div>
+                  <div class="detail-value" id="m_plantLoc"></div>
+                </div>
+                <div class="col-6">
+                  <div class="detail-label">รหัส Asset / เลขทะเบียน</div>
+                  <div class="detail-value" id="m_asset"></div>
+                </div>
+                <div class="col-12">
+                  <div class="detail-label">อีเมลผู้แจ้ง</div>
+                  <div class="detail-value text-warning" id="m_empEmail"></div>
+                </div>
               </div>
             </div>
+
+            <!-- ปัญหา -->
             <div class="detail-box">
-              <div class="detail-label">ปัญหา</div><div class="detail-value text-danger" id="m_issueType"></div>
-              <div class="detail-label">รายละเอียด</div><div class="detail-value" id="m_detail"></div>
+              <div class="detail-label">ประเภทปัญหา</div>
+              <div class="detail-value text-danger" id="m_issueType"></div>
+              <div class="detail-label">รายละเอียด</div>
+              <div class="detail-value" id="m_detail"></div>
             </div>
+
+            <!-- New PC (ซ่อน/แสดงตาม issueType) -->
             <div id="m_newPcSection" class="detail-box border border-info" style="display:none;">
-              <h6 class="text-info mb-3">ข้อมูลการขอเครื่องใหม่</h6>
-              <div class="detail-label">เหตุผล</div><div class="detail-value" id="m_reasonPc"></div>
-              <div class="detail-label">โปรแกรมที่ต้องการ</div><div class="detail-value" id="m_reqSoft"></div>
-              <a href="#" id="m_photoLink" target="_blank" class="btn btn-sm btn-outline-info mt-2">ดูรูปเครื่องเก่า</a>
+              <h6 class="text-info mb-3"><i class="bi bi-laptop me-1"></i>ข้อมูลการขอเครื่องใหม่</h6>
+              <div class="detail-label">เหตุผล</div>
+              <div class="detail-value" id="m_reasonPc"></div>
+              <div class="detail-label">โปรแกรมที่ต้องการ</div>
+              <div class="detail-value" id="m_reqSoft"></div>
+              <a href="#" id="m_photoLink" target="_blank" class="btn btn-sm btn-outline-info mt-2" style="display:none;">
+                <i class="bi bi-image me-1"></i>ดูรูปเครื่องเก่า
+              </a>
             </div>
           </div>
+
+          <!-- ── Right: จัดการ ── -->
           <div class="col-md-5">
-            <h6 class="text-success border-bottom border-secondary pb-2 mb-3">ส่วนจัดการของช่าง IT</h6>
+            <h6 class="text-success border-bottom border-secondary pb-2 mb-3">
+              <i class="bi bi-tools me-1"></i>ส่วนจัดการของช่าง IT
+            </h6>
             <div class="bg-dark p-3 rounded border border-secondary">
               <input type="hidden" id="modalRow">
-              <div class="mb-3"><label class="form-label text-muted small">ผู้รับผิดชอบงานนี้</label><select id="modalAssignee" class="form-select"></select></div>
-              <div class="mb-3"><label class="form-label text-muted small">อัปเดตสถานะ</label><select id="modalStatus" class="form-select text-info fw-bold" onchange="onStatusChange()"><option value="รอดำเนินการ">รอดำเนินการ</option><option value="กำลังดำเนินการ">กำลังดำเนินการ</option><option value="เสร็จสิ้น">เสร็จสิ้น</option></select></div>
-              <div id="externalSection" style="display:none;">
-                <div class="mb-2 form-check form-switch"><input class="form-check-input" type="checkbox" id="isExternalCheck" onchange="onExternalToggle()"><label class="form-check-label text-info" for="isExternalCheck">แจ้งซ่อมภายนอก</label></div>
-                <div id="externalReasonBox" style="display:none;"><textarea id="externalReason" class="form-control" rows="2" placeholder="เหตุผลซ่อมภายนอก..."></textarea></div>
+
+              <div class="mb-3">
+                <label class="form-label text-muted small">ผู้รับผิดชอบงานนี้</label>
+                <select id="modalAssignee" class="form-select"></select>
               </div>
-              <div class="mb-2 mt-3"><label class="form-label text-muted small">บันทึกการแก้ไข / หมายเหตุ</label><textarea id="modalNotes" class="form-control" rows="4"></textarea></div>
+
+              <div class="mb-3">
+                <label class="form-label text-muted small">อัปเดตสถานะ</label>
+                <select id="modalStatus" class="form-select text-info fw-bold" onchange="onStatusChange()">
+                  <option value="รอดำเนินการ">รอดำเนินการ</option>
+                  <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
+                  <option value="เสร็จสิ้น">เสร็จสิ้น</option>
+                </select>
+              </div>
+
+              <!-- External repair section -->
+              <div id="externalSection" style="display:none;">
+                <div class="mb-2 form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="isExternalCheck" onchange="onExternalToggle()">
+                  <label class="form-check-label text-info" for="isExternalCheck">แจ้งซ่อมภายนอก</label>
+                </div>
+                <div id="externalReasonBox" style="display:none;">
+                  <textarea id="externalReason" class="form-control" rows="2"
+                    placeholder="เหตุผล / รายละเอียดการส่งซ่อมภายนอก..."></textarea>
+                </div>
+              </div>
+
+              <div class="mt-3 mb-2">
+                <label class="form-label text-muted small">บันทึกการแก้ไข / หมายเหตุ</label>
+                <textarea id="modalNotes" class="form-control" rows="4"
+                  placeholder="บันทึกรายละเอียดการดำเนินงาน..."></textarea>
+              </div>
             </div>
           </div>
+
         </div>
+      </div><!-- /modal-body -->
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">ปิด</button>
+        <button type="button" class="btn btn-info rounded-pill px-5 text-white fw-bold" onclick="saveITUpdate()">
+          <i class="bi bi-save me-1"></i>บันทึกข้อมูล
+        </button>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">ปิด</button><button type="button" class="btn btn-info rounded-pill px-5 text-white fw-bold" onclick="saveITUpdate()">บันทึกข้อมูล</button></div>
+
     </div>
   </div>
 </div>
 
+<!-- ══ SCRIPTS ══ -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
