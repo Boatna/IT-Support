@@ -24,6 +24,17 @@ body {
   display: none;
 }
 
+#appContent {
+  display: none;
+}
+
+.assignee-line {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
 .font-size-10 {
   font-size: 10px !important;
 }

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
   <title>IT Control Center Dashboard — ศูนย์ควบคุมและบริหารจัดการงานสารสนเทศ</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -23,7 +24,7 @@
           id="pinInput"
           class="form-control text-center fs-4 rounded-pill py-2 pin-input-field"
           placeholder="PIN Code"
-          maxlength="8"
+          maxlength="30"
           onkeyup="if(event.key==='Enter') checkPin()"
           autocomplete="off"
         >
@@ -132,12 +133,12 @@
           <span class="badge bg-secondary" id="ticketCountBadge">0 รายการ</span>
         </div>
         <div class="d-flex gap-1 flex-wrap" id="quickFilterGroup">
-          <span class="filter-pill active" onclick="applyQuickFilter('', this)">ทั้งหมด</span>
-          <span class="filter-pill" onclick="applyQuickFilter('รอดำเนินการ', this)">🔴 รอดำเนินการ</span>
-          <span class="filter-pill" onclick="applyQuickFilter('กำลังดำเนินการ', this)">🟡 กำลังดำเนินการ</span>
-          <span class="filter-pill" onclick="applyQuickFilter('เสร็จสิ้น', this)">🟢 เสร็จสิ้น</span>
-          <span class="filter-pill" onclick="applyQuickFilter('ซ่อมนอก', this)">🚚 ซ่อมนอก</span>
-          <span class="filter-pill" onclick="applyQuickFilter('ด่วนมาก', this)">⚡ ด่วนมาก</span>
+          <span class="filter-pill active" onclick="applyQuickFilter('', this)" data-key="">ทั้งหมด</span>
+          <span class="filter-pill" onclick="applyQuickFilter('รอดำเนินการ', this)" data-key="รอดำเนินการ">🔴 รอดำเนินการ</span>
+          <span class="filter-pill" onclick="applyQuickFilter('กำลังดำเนินการ', this)" data-key="กำลังดำเนินการ">🟡 กำลังดำเนินการ</span>
+          <span class="filter-pill" onclick="applyQuickFilter('เสร็จสิ้น', this)" data-key="เสร็จสิ้น">🟢 เสร็จสิ้น</span>
+          <span class="filter-pill" onclick="applyQuickFilter('ซ่อมนอก', this)" data-key="ซ่อมนอก">🚚 ซ่อมนอก</span>
+          <span class="filter-pill" onclick="applyQuickFilter('ด่วนมาก', this)" data-key="ด่วนมาก">⚡ ด่วนมาก</span>
         </div>
       </div>
 
@@ -255,6 +256,7 @@
                 <div id="m_photoContainer" class="d-none-init">
                   <div class="detail-label">รูปภาพเครื่องเก่า</div>
                   <div class="photo-thumb-box mt-1">
+                    <div id="m_photoStatus" class="text-muted small py-3"></div>
                     <a href="#" id="m_photoLinkFull" target="_blank">
                       <img id="m_photoImg" src="" alt="รูปเครื่องเก่า">
                     </a>
@@ -274,6 +276,7 @@
               </h6>
               <div class="bg-dark p-3 rounded-3 border border-secondary">
                 <input type="hidden" id="modalRow">
+                <input type="hidden" id="modalTicketId">
 
                 <div class="mb-3">
                   <div class="d-flex justify-content-between align-items-center mb-1">
@@ -302,14 +305,14 @@
                     </label>
                   </div>
                   <div id="externalReasonBox" class="d-none-init">
-                    <textarea id="externalReason" class="form-control" rows="2"
+                    <textarea id="externalReason" class="form-control" rows="2" maxlength="1000"
                       placeholder="ระบุชื่อบริษัท หรือเหตุผลที่ต้องส่งซ่อมภายนอก..."></textarea>
                   </div>
                 </div>
 
                 <div class="mb-2">
                   <label for="modalNotes" class="form-label text-muted small">บันทึกการแก้ไข / ข้อความแจ้งผู้ใช้</label>
-                  <textarea id="modalNotes" class="form-control" rows="4"
+                  <textarea id="modalNotes" class="form-control" rows="4" maxlength="3000"
                     placeholder="บันทึกรายละเอียดการดำเนินงานหรือวิธีแก้ไข..."></textarea>
                   <small class="text-muted font-size-11">
                     * ข้อความนี้จะถูกส่งทางอีเมลถึงผู้แจ้งเมื่อกดบันทึก
@@ -323,7 +326,7 @@
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
-          <button type="button" class="btn btn-info rounded-pill px-4 text-white fw-bold shadow-sm" onclick="saveITUpdate()">
+          <button type="button" id="saveITBtn" class="btn btn-info rounded-pill px-4 text-white fw-bold shadow-sm" onclick="saveITUpdate()">
             <i class="bi bi-save me-1"></i>บันทึกและส่งแจ้งเตือน
           </button>
         </div>
@@ -340,7 +343,7 @@
   <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="dashboard.js"></script>
 </body>

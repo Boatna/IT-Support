@@ -1,8 +1,8 @@
-
-const API_URL = "https://script.google.com/macros/s/AKfycbyv3PxHFJPv_BigI_ejkfRj6UVg21xw_oFTBbLYzfcoRUwY1zavlBnTxbZ0REt6tY_h/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyK49DmlapC95D-v8RHDOqRO8acT3-LTqmACiz2Pr5ffjCHt5TIF-qWUD2wkptlJGmd/exec";
 
 let allEmployees = [];
 let activeAutocompleteIndex = -1;
+let lastAutoPhone = "";
 
 const SOFTWARE_LIST = {
   office: [
@@ -27,29 +27,61 @@ const SOFTWARE_LIST = {
   ]
 };
 
-window.addEventListener("DOMContentLoaded", async function () {
+const PC_TYPE_LABELS = {
+  office: "Office (สำนักงานทั่วไป)",
+  engineering: "Engineering (วิศวกรรม / ออกแบบ)"
+};
+
+const ISSUE_LABELS = {
+  Hardware: "แจ้งซ่อมอุปกรณ์ (Hardware)",
+  Software: "ปัญหาโปรแกรม / Windows (Software)",
+  Network: "ระบบเครือข่าย / อินเทอร์เน็ต (Network)",
+  Request_New_PC: "ขอคอมพิวเตอร์ / โน๊ตบุ๊คใหม่",
+  Other: "อื่นๆ"
+};
+
+function _show(el, display) { if (el) el.style.display = display || "block"; }
+function _hide(el) { if (el) el.style.display = "none"; }
+
+async function fetchWithTimeout(url, options, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
   try {
-    const res = await fetch(API_URL + "?action=getEmployees");
+    return await fetch(url, Object.assign({}, options || {}, { signal: ctrl.signal }));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadEmployees() {
+  const overlay = document.getElementById("loadingOverlay");
+  if (overlay) overlay.style.display = "";
+
+  try {
+    const res = await fetchWithTimeout(API_URL + "?action=getEmployees", {}, 30000);
     if (!res.ok) throw new Error("HTTP error " + res.status);
-    allEmployees = await res.json();
-    if (!Array.isArray(allEmployees)) allEmployees = [];
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error((data && data.error) || "รูปแบบข้อมูลไม่ถูกต้อง");
+    allEmployees = data;
   } catch (err) {
     console.error("โหลดข้อมูลพนักงานไม่สำเร็จ:", err);
-    Swal.fire({
-      icon: "warning",
-      title: "การเชื่อมต่อฐานข้อมูลล่าช้า",
-      text: "ระบบไม่สามารถดึงรายชื่อพนักงานได้ในขณะนี้ แต่ท่านยังสามารถกรอกข้อมูลได้ตามปกติ",
-      confirmButtonText: "ตกลง"
-    });
-  } finally {
-    const overlay = document.getElementById("loadingOverlay");
     if (overlay) overlay.style.display = "none";
+    const r = await Swal.fire({
+      icon: "warning",
+      title: "โหลดรายชื่อพนักงานไม่สำเร็จ",
+      text: "ระบบไม่สามารถดึงรายชื่อพนักงานได้ในขณะนี้ จึงยังค้นหาและเลือกผู้แจ้งไม่ได้ กรุณาลองใหม่อีกครั้ง",
+      showCancelButton: true,
+      confirmButtonText: "ลองใหม่",
+      cancelButtonText: "ปิด"
+    });
+    if (r.isConfirmed) return loadEmployees();
+    return;
   }
-});
+  if (overlay) overlay.style.display = "none";
+}
 
-// ════════════════════════════════════════════════════════════
-//  🗂️ สลับแท็บ (Tab Switching)
-// ════════════════════════════════════════════════════════════
+window.addEventListener("DOMContentLoaded", loadEmployees);
+
 function switchTab(tabId, el) {
   document.querySelectorAll(".section-div").forEach(d => d.classList.remove("active-section"));
   document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
@@ -59,9 +91,6 @@ function switchTab(tabId, el) {
   if (el) el.classList.add("active");
 }
 
-// ════════════════════════════════════════════════════════════
-//  🔍 ค้นหาพนักงาน (Autocomplete)
-// ════════════════════════════════════════════════════════════
 const searchInput = document.getElementById("searchEmpInput");
 const autocompleteList = document.getElementById("autocompleteList");
 
@@ -73,6 +102,10 @@ if (searchInput) {
 
     const clearBtn = document.getElementById("clearEmpBtn");
     if (clearBtn) clearBtn.style.display = val ? "inline-block" : "none";
+    if (document.getElementById("empId").value &&
+        this.value !== `${document.getElementById("empId").value} — ${document.getElementById("empName").value}`) {
+      _clearEmployeeFields();
+    }
 
     if (!val) {
       autocompleteList.style.display = "none";
@@ -119,7 +152,6 @@ if (searchInput) {
     autocompleteList.style.display = "block";
   });
 
-  // รองรับคีย์บอร์ด Up / Down / Enter / Esc
   searchInput.addEventListener("keydown", function (e) {
     const items = autocompleteList.querySelectorAll(".list-group-item-action");
     if (!items.length || autocompleteList.style.display === "none") return;
@@ -167,31 +199,37 @@ function selectEmployee(emp) {
   const clearBtn = document.getElementById("clearEmpBtn");
   if (clearBtn) clearBtn.style.display = "inline-block";
 
-  // ดึงเลขทะเบียนอัตโนมัติถ้ามี
   const assetInput = document.getElementById("assetTag");
   const dAssetWrap = document.getElementById("d_assetTagWrap");
   const autoLabel  = document.getElementById("assetAutoLabel");
   const hintLabel  = document.getElementById("assetTagHint");
 
-  if (emp.assetTag && emp.assetTag.trim() !== "") {
-    assetInput.value = emp.assetTag.trim();
-    document.getElementById("d_empAssetTag").innerText = emp.assetTag.trim();
-    if (dAssetWrap) dAssetWrap.style.display = "";
-    if (autoLabel)  autoLabel.style.display  = "";
-    if (hintLabel)  hintLabel.style.display  = "";
+  const tag = String(emp.assetTag || "").trim();
+  if (tag) {
+    assetInput.value = tag;
+    document.getElementById("d_empAssetTag").innerText = tag;
+    _show(dAssetWrap, "block");
+    _show(autoLabel, "inline-block");
+    _show(hintLabel, "block");
     assetInput.classList.add("field-autofilled");
   } else {
     assetInput.value = "";
-    if (dAssetWrap) dAssetWrap.style.display = "none";
-    if (autoLabel)  autoLabel.style.display  = "none";
-    if (hintLabel)  hintLabel.style.display  = "none";
+    _hide(dAssetWrap);
+    _hide(autoLabel);
+    _hide(hintLabel);
     assetInput.classList.remove("field-autofilled");
   }
 
-  // ดึงอีเมลอัตโนมัติถ้ามี
   const emailInput = document.getElementById("empEmail");
-  if (emp.email && emp.email.trim() !== "") {
-    emailInput.value = emp.email.trim();
+  emailInput.value = String(emp.email || "").trim();
+
+  const phoneInput = document.getElementById("contactPhone");
+  if (phoneInput) {
+    const cur = phoneInput.value.trim();
+    if (!cur || cur === lastAutoPhone) {   // ไม่ทับเบอร์ที่ผู้ใช้พิมพ์เอง แต่เปลี่ยนตามพนักงานคนใหม่ได้
+      lastAutoPhone = String(emp.phone || "").trim();
+      phoneInput.value = lastAutoPhone;
+    }
   }
 
   setTimeout(() => {
@@ -200,39 +238,38 @@ function selectEmployee(emp) {
   }, 100);
 }
 
-function clearSelectedEmployee() {
-  document.getElementById("empId").value       = "";
-  document.getElementById("empName").value     = "";
-  document.getElementById("empDept").value     = "";
-  document.getElementById("empPosition").value = "";
-  document.getElementById("empPlant").value    = "";
-  document.getElementById("searchEmpInput").value = "";
-  document.getElementById("employeeInfoBox").style.display = "none";
-  
-  const clearBtn = document.getElementById("clearEmpBtn");
-  if (clearBtn) clearBtn.style.display = "none";
+function _clearEmployeeFields() {
+  ["empId", "empName", "empDept", "empPosition", "empPlant"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  _hide(document.getElementById("employeeInfoBox"));
 
   const assetInput = document.getElementById("assetTag");
   assetInput.value = "";
   assetInput.classList.remove("field-autofilled");
-  document.getElementById("d_assetTagWrap").style.display = "none";
-  document.getElementById("assetAutoLabel").style.display = "none";
-  document.getElementById("assetTagHint").style.display = "none";
-
-  document.getElementById("searchEmpInput").focus();
+  _hide(document.getElementById("d_assetTagWrap"));
+  _hide(document.getElementById("assetAutoLabel"));
+  _hide(document.getElementById("assetTagHint"));
 }
 
-// ตรวจสอบเมื่อมีการแก้ไขเลขทะเบียนด้วยตนเอง
+function clearSelectedEmployee(skipFocus) {
+  _clearEmployeeFields();
+  document.getElementById("searchEmpInput").value = "";
+  _hide(document.getElementById("clearEmpBtn"));
+  const list = document.getElementById("autocompleteList");
+  if (list) list.style.display = "none";
+  if (skipFocus !== true) document.getElementById("searchEmpInput").focus();
+}
+
 const assetTagElem = document.getElementById("assetTag");
 if (assetTagElem) {
   assetTagElem.addEventListener("input", function () {
     this.classList.remove("field-autofilled");
-    const autoLabel = document.getElementById("assetAutoLabel");
-    if (autoLabel) autoLabel.style.display = "none";
+    _hide(document.getElementById("assetAutoLabel"));
+    _hide(document.getElementById("assetTagHint"));
   });
 }
 
-// ปิด Autocomplete เมื่อคลิกภายนอก
 document.addEventListener("pointerdown", function (e) {
   const input = document.getElementById("searchEmpInput");
   const list  = document.getElementById("autocompleteList");
@@ -242,9 +279,6 @@ document.addEventListener("pointerdown", function (e) {
   }
 });
 
-// ════════════════════════════════════════════════════════════
-//  🖥️ New PC Section — เปิด/ปิดการขอเครื่องใหม่
-// ════════════════════════════════════════════════════════════
 function toggleNewPcSection() {
   const isPC = document.getElementById("issueType").value === "Request_New_PC";
   const sec  = document.getElementById("newPcSection");
@@ -259,8 +293,7 @@ function toggleNewPcSection() {
     if (softSec) softSec.style.display = "none";
     const softGrid = document.getElementById("softwareGrid");
     if (softGrid) softGrid.innerHTML = "";
-    
-    // รีเซ็ตรูปภาพ
+
     const fileInput = document.getElementById("oldPcPhoto");
     if (fileInput) fileInput.value = "";
     const previewBox = document.getElementById("photoPreviewBox");
@@ -308,7 +341,6 @@ function previewSelectedPhoto(input) {
   const file = input.files[0];
   const sizeMB = file.size / (1024 * 1024);
 
-  // เช็คขนาดไฟล์ (ไม่เกิน 10 MB)
   if (sizeMB > 10) {
     Swal.fire({
       icon: "error",
@@ -342,13 +374,10 @@ function getSelectedSoftware() {
 
 function getPcTypeLabel() {
   const sel = document.getElementById("pcTypeSelect");
-  if (!sel || sel.selectedIndex < 0) return "";
-  return sel.options[sel.selectedIndex]?.text || "";
+  if (!sel || !sel.value) return "";
+  return PC_TYPE_LABELS[sel.value] || sel.value;
 }
 
-// ════════════════════════════════════════════════════════════
-//  🔄 Multi-Step Loading Overlay
-// ════════════════════════════════════════════════════════════
 function showSubmitOverlay(hasFile) {
   const overlay = document.getElementById("submitOverlay");
   overlay.classList.add("active");
@@ -384,9 +413,6 @@ function _delay(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-// ════════════════════════════════════════════════════════════
-//  📤 ส่งข้อมูลแจ้งซ่อม (Submit)
-// ════════════════════════════════════════════════════════════
 async function prepareSubmit() {
   const empId = document.getElementById("empId").value.trim();
   if (!empId) {
@@ -411,6 +437,31 @@ async function prepareSubmit() {
     return itForm.reportValidity();
   }
 
+  const phoneVal = document.getElementById("contactPhone").value.trim();
+  if (!/^[0-9+\-#\s()\/,]{2,30}$/.test(phoneVal)) {
+    return Swal.fire({
+      icon: "warning",
+      title: "เบอร์ติดต่อไม่ถูกต้อง",
+      text: "กรุณากรอกเฉพาะตัวเลข หรือเบอร์ภายใน เช่น 108, 332/381 หรือ 081-234-5678"
+    });
+  }
+
+  const assetInput = document.getElementById("assetTag");
+  assetInput.value = assetInput.value.trim().toUpperCase().replace(/\s+/g, "");
+  if (/^[-–—.]+$/.test(assetInput.value)) assetInput.value = "";
+  const assetVal = assetInput.value;
+  if (assetVal && !/^IE-IT-PC-[A-Z]?\d{2,4}$/.test(assetVal)) {
+    const ok = await Swal.fire({
+      icon: "question",
+      title: "เลขทะเบียนไม่ตรงรูปแบบปกติ",
+      html: `ท่านกรอก <b>${_esc(assetVal)}</b><br><small class="text-muted">รูปแบบปกติ เช่น IE-IT-PC-N198 — ตรวจสอบตัวอักษร I/1 และ O/0 อีกครั้ง</small>`,
+      showCancelButton: true,
+      confirmButtonText: "ถูกต้อง ส่งต่อ",
+      cancelButtonText: "กลับไปแก้ไข"
+    });
+    if (!ok.isConfirmed) { assetInput.focus(); return; }
+  }
+
   const issueType = document.getElementById("issueType").value;
   const fileInput = document.getElementById("oldPcPhoto");
 
@@ -433,13 +484,11 @@ async function prepareSubmit() {
 
   const hasFile = issueType === "Request_New_PC" && fileInput.files && fileInput.files.length > 0;
 
-  // ปิดปุ่มส่ง & เปิด Loading Overlay
   const btn = document.getElementById("submitBtn");
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>กำลังดำเนินการ...';
   showSubmitOverlay(hasFile);
 
-  // ── Step 1: ตรวจสอบข้อมูล ──
   _setStep(1, "active");
   await _delay(350);
 
@@ -463,15 +512,14 @@ async function prepareSubmit() {
   };
   _setStep(1, "done");
 
-  // ── Step 2: อัปโหลดรูปภาพ ──
   if (hasFile) {
     _setStep(2, "active");
     try {
       const file = fileInput.files[0];
-      const base64Data = await _readFileAsBase64(file);
-      formData.fileData = base64Data;
-      formData.fileName = file.name;
-      formData.mimeType = file.type || "image/jpeg";
+      const packed = await _prepareImage(file);
+      formData.fileData = packed.base64;
+      formData.fileName = packed.name;
+      formData.mimeType = packed.mime;
       _setStep(2, "done");
     } catch (err) {
       _setStep(2, "error");
@@ -481,8 +529,48 @@ async function prepareSubmit() {
     }
   }
 
-  // ── Step 3 & 4: บันทึกลง Sheet และส่งอีเมล ──
   await sendData(formData);
+}
+
+async function _prepareImage(file) {
+  const original = async () => ({
+    base64: await _readFileAsBase64(file),
+    name: file.name,
+    mime: file.type || "image/jpeg"
+  });
+  try {
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) return await original();
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const img = await new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = rej;
+      im.src = dataUrl;
+    });
+    const MAX = 1600;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    if (scale === 1 && file.size < 1.5 * 1024 * 1024) return await original();
+    const canvas = document.createElement("canvas");
+    canvas.width  = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const out = canvas.toDataURL("image/jpeg", 0.85);
+    return {
+      base64: out.split(",")[1],
+      name: file.name.replace(/\.[^.]+$/, "") + ".jpg",
+      mime: "image/jpeg"
+    };
+  } catch (e) {
+    return await original();
+  }
 }
 
 function _readFileAsBase64(file) {
@@ -501,24 +589,46 @@ function _readFileAsBase64(file) {
 async function sendData(formData) {
   _setStep(3, "active");
   try {
-    const res = await fetch(API_URL, {
+    const res = await fetchWithTimeout(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action: "saveTicket", data: formData })
-    });
+    }, 120000);
 
     const result = await res.json();
 
+    if (!result.success && result.code === "DUPLICATE") {
+      hideSubmitOverlay();
+      const list = (result.existing || [])
+        .map(t => `<li><b>${_esc(t.ticketId)}</b> — ${_esc(t.status)} <small class="text-muted">(${_esc(String(t.date).split(" ")[0])})</small></li>`)
+        .join("");
+      const ask = await Swal.fire({
+        icon: "warning",
+        title: "ท่านมีงานประเภทนี้ค้างอยู่แล้ว",
+        html: `<ul class="text-start small mb-2">${list}</ul>ต้องการแจ้งเพิ่มเป็น Ticket ใหม่อีกครั้งหรือไม่?`,
+        showCancelButton: true,
+        confirmButtonText: "แจ้งเพิ่มใหม่",
+        cancelButtonText: "ไม่ ใช้งานเดิม (ติดตามสถานะ)"
+      });
+      if (!ask.isConfirmed) { resetBtn(); return; }
+      formData.confirmDuplicate = true;
+      showSubmitOverlay(Boolean(formData.fileData));
+      _setStep(1, "done");
+      if (formData.fileData) _setStep(2, "done");
+      return sendData(formData);
+    }
+
     if (result.success) {
       _setStep(3, "done");
-
-      // ── Step 4: ส่งแจ้งเตือน ──
       _setStep(4, "active");
-      await _delay(500);
-      _setStep(4, "done");
+      await _delay(300);
+      _setStep(4, result.emailSent === false ? "error" : "done");
       await _delay(300);
 
       hideSubmitOverlay();
+      const notifyText = result.emailSent === false
+        ? "บันทึก Ticket เรียบร้อยแล้ว แต่ระบบส่งอีเมลแจ้งทีม IT ไม่สำเร็จ กรุณาโทรแจ้งช่าง IT อีกครั้งหากเป็นงานด่วน"
+        : "ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว และส่งอีเมลแจ้งเตือนไปยังทีม IT แล้ว";
 
       Swal.fire({
         icon: "success",
@@ -529,7 +639,7 @@ async function sendData(formData) {
             <div class="fs-3 fw-bold text-primary mt-1">${_esc(result.ticketId)}</div>
           </div>
           <p class="text-muted small">
-            ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว และส่งข้อความแจ้งเตือนไปยังช่าง IT เรียบร้อยแล้ว<br>
+            ${_esc(notifyText)}<br>
             ท่านสามารถใช้รหัสพนักงานในการติดตามสถานะได้ตลอดเวลา
           </p>
         `,
@@ -549,16 +659,20 @@ async function sendData(formData) {
     await _delay(300);
     hideSubmitOverlay();
     console.error("sendData error:", err);
-    Swal.fire("ข้อผิดพลาดของระบบ", "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง", "error");
+    if (err && err.name === "AbortError") {
+      Swal.fire("ใช้เวลานานผิดปกติ", "ระบบอาจบันทึกข้อมูลไปแล้ว กรุณาตรวจสอบที่แท็บ 'ติดตามสถานะ' ก่อนส่งซ้ำ เพื่อไม่ให้เกิด Ticket ซ้ำ", "warning");
+    } else {
+      Swal.fire("ข้อผิดพลาดของระบบ", "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง", "error");
+    }
     resetBtn();
   }
 }
 
 function resetForm() {
   document.getElementById("itForm").reset();
-  clearSelectedEmployee();
+  lastAutoPhone = "";
+  clearSelectedEmployee(true);
 
-  document.getElementById("employeeInfoBox").style.display = "none";
   document.getElementById("softwareSection").style.display = "none";
   document.getElementById("softwareGrid").innerHTML = "";
 
@@ -579,9 +693,6 @@ function resetBtn() {
   }
 }
 
-// ════════════════════════════════════════════════════════════
-//  📋 ติดตามสถานะ Ticket (Track Tickets)
-// ════════════════════════════════════════════════════════════
 async function loadMyTickets() {
   const input = document.getElementById("trackEmpId");
   const rawId = input ? input.value.trim() : "";
@@ -595,9 +706,10 @@ async function loadMyTickets() {
   tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>กำลังค้นหาประวัติการแจ้งซ่อม...</td></tr>';
 
   try {
-    const res  = await fetch(`${API_URL}?action=getTickets&empId=${encodeURIComponent(empId)}`);
+    const res  = await fetchWithTimeout(`${API_URL}?action=getTickets&empId=${encodeURIComponent(empId)}`, {}, 30000);
     const data = await res.json();
-    tbody.innerHTML = "";
+
+    if (data && !Array.isArray(data) && data.error) throw new Error(data.error);
 
     if (!Array.isArray(data) || data.length === 0) {
       tbody.innerHTML = `
@@ -616,18 +728,19 @@ async function loadMyTickets() {
       "รอดำเนินการ":    '<span class="badge bg-danger">รอดำเนินการ</span>'
     };
 
-    data.forEach(r => {
+    tbody.innerHTML = data.map(r => {
       const isExt = _isExternalTrue(r.isExternal);
       const extBadge = isExt ? '<span class="badge bg-info text-dark">ซ่อมนอก</span>' : '—';
       const badge = statusBadgeMap[r.status] || `<span class="badge bg-secondary">${_esc(r.status || "ไม่ระบุ")}</span>`;
       const dateDisplay = r.date ? String(r.date).split(" ")[0] : "—";
+      const issueLabel = ISSUE_LABELS[r.issue] || r.issue || "—";
 
-      tbody.innerHTML += `
+      return `
         <tr>
           <td class="fw-bold text-primary" style="white-space:nowrap;">${_esc(r.ticketId)}</td>
           <td style="white-space:nowrap;">${_esc(dateDisplay)}</td>
-          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(r.issue)}">
-            ${_esc(r.issue || "—")}
+          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(issueLabel)}">
+            ${_esc(issueLabel)}
           </td>
           <td>${badge}</td>
           <td class="d-none d-md-table-cell">${_esc(r.assignee || "—")}</td>
@@ -636,16 +749,13 @@ async function loadMyTickets() {
             ${_esc(r.itNote || "—")}
           </td>
         </tr>`;
-    });
+    }).join("");
   } catch (err) {
     console.error("loadMyTickets error:", err);
     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง</td></tr>';
   }
 }
 
-// ════════════════════════════════════════════════════════════
-//  🛡️ Helper Functions
-// ════════════════════════════════════════════════════════════
 function _isExternalTrue(val) {
   if (!val) return false;
   if (val === true || val === 1) return true;

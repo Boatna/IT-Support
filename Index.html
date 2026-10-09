@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>IT Support Helpdesk — ศูนย์แจ้งซ่อมและบริการสารสนเทศ</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -90,7 +90,7 @@
             <label for="empEmail" class="form-label">
               <i class="bi bi-envelope-fill text-primary"></i> อีเมลของคุณ <span class="text-danger">*</span>
             </label>
-            <input type="email" id="empEmail" class="form-control" placeholder="example@bitwise.co.th" required>
+            <input type="email" id="empEmail" class="form-control" placeholder="example@bitwise.co.th" maxlength="120" autocomplete="email" required>
             <div class="email-hint mt-2">
               <i class="bi bi-info-circle-fill text-primary me-1"></i>
               ระบบจะส่งอีเมลแจ้งสถานะงานให้คุณทุกครั้งที่ช่าง IT มีการอัปเดตงาน
@@ -108,7 +108,7 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                  <input type="text" id="contactPhone" class="form-control" placeholder="เช่น 108" required>
+                  <input type="text" id="contactPhone" class="form-control" placeholder="เช่น 108" maxlength="30" required>
                 </div>
               </div>
 
@@ -130,7 +130,7 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="bi bi-card-text"></i></span>
-                  <input type="text" id="assetTag" class="form-control" placeholder="เช่น IE-IT-PC-N400">
+                  <input type="text" id="assetTag" class="form-control" placeholder="เช่น IE-IT-PC-N400" maxlength="100">
                 </div>
                 <div id="assetTagHint" class="mt-1 d-none-init">
                   <small class="text-success"><i class="bi bi-check-circle-fill"></i> ดึงอัตโนมัติ — แก้ไขได้</small>
@@ -143,7 +143,7 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="bi bi-upc"></i></span>
-                  <input type="text" id="assetNumber" class="form-control" placeholder="เช่น 100018002877">
+                  <input type="text" id="assetNumber" class="form-control" placeholder="เช่น 100018002877" maxlength="100">
                 </div>
               </div>
 
@@ -166,7 +166,7 @@
             <label for="issueDetail" class="form-label">
               รายละเอียดอาการที่พบ <span class="text-danger">*</span>
             </label>
-            <textarea id="issueDetail" class="form-control" rows="4" required
+            <textarea id="issueDetail" class="form-control" rows="4" maxlength="3000" required
               placeholder="อธิบายอาการ เช่น หน้าจอค้าง เปิดไม่ติด พิมพ์ไม่ได้ หรือข้อความ error ที่ปรากฏ..."></textarea>
           </div>
           <div id="newPcSection" class="d-none-init">
@@ -189,7 +189,7 @@
                 <label for="reasonNewPc" class="form-label fw-semibold">
                   📝 เหตุผลความจำเป็นในการขอเครื่องใหม่
                 </label>
-                <textarea id="reasonNewPc" class="form-control" rows="2"
+                <textarea id="reasonNewPc" class="form-control" rows="2" maxlength="2000"
                   placeholder="เช่น เครื่องเก่าอายุเกิน 5 ปี ช้ามาก ไม่สามารถรองรับโปรแกรมการทำงานปัจจุบันได้..."></textarea>
               </div>
               <div class="mb-3">
