@@ -3,6 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="IT Support">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+
   <title>IT Support Helpdesk — ศูนย์แจ้งซ่อมและบริการสารสนเทศ</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -17,6 +25,19 @@
     </div>
   </header>
   <main class="container mb-5 mt-4 portal-container">
+    <div id="pwaInstallBanner" class="pwa-install-banner d-none-init mb-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-phone-fill text-primary fs-4 me-2"></i>
+        <div>
+          <strong class="d-block text-dark font-size-13">ติดตั้งแอป IT Support ลงในเครื่อง</strong>
+          <small class="text-muted">เปิดใช้งานได้รวดเร็วทันใจเหมือนแอปพลิเคชัน</small>
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" onclick="triggerPwaInstall()">
+        <i class="bi bi-download me-1"></i>ติดตั้งแอป
+      </button>
+    </div>
+
     <div class="text-center mb-4">
       <ul class="nav nav-pills justify-content-center flex-nowrap gap-2">
         <li class="nav-item flex-fill flex-md-grow-0">
@@ -44,11 +65,11 @@
           </h5>
           <div class="position-relative mb-3">
             <label for="searchEmpInput" class="form-label">
-              ค้นหารหัส หรือ ชื่อพนักงาน <span class="text-danger">*</span>
+              ค้นหารหัส, ชื่อ-นามสกุล หรือ แผนก <span class="text-danger">*</span>
             </label>
             <div class="input-group">
               <span class="input-group-text"><i class="bi bi-search"></i></span>
-              <input type="text" id="searchEmpInput" class="form-control" placeholder="พิมพ์ชื่อหรือรหัสพนักงาน..." autocomplete="off">
+              <input type="text" id="searchEmpInput" class="form-control" placeholder="พิมพ์ชื่อ, รหัสพนักงาน หรือแผนก..." autocomplete="off">
               <button class="btn btn-outline-secondary d-none-init" type="button" id="clearEmpBtn" onclick="clearSelectedEmployee()">
                 <i class="bi bi-x-lg"></i>
               </button>
@@ -108,7 +129,7 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                  <input type="text" id="contactPhone" class="form-control" placeholder="เช่น 108" maxlength="30" required>
+                  <input type="text" id="contactPhone" class="form-control" placeholder="เช่น 108 หรือ 081-234-5678" maxlength="40" required>
                 </div>
               </div>
 
@@ -162,29 +183,35 @@
               <option value="Other">📝 อื่นๆ</option>
             </select>
           </div>
-          <div class="mb-4">
+          <div class="mb-3">
             <label for="issueDetail" class="form-label">
               รายละเอียดอาการที่พบ <span class="text-danger">*</span>
             </label>
             <textarea id="issueDetail" class="form-control" rows="4" maxlength="3000" required
               placeholder="อธิบายอาการ เช่น หน้าจอค้าง เปิดไม่ติด พิมพ์ไม่ได้ หรือข้อความ error ที่ปรากฏ..."></textarea>
           </div>
+
+          <!-- กล่องแนบรูปถ่ายสำหรับทุกหมวดหมู่ (ขอเครื่องใหม่ = บังคับ / หมวดหมู่อื่น = แนบหรือไม่ก็ได้) -->
+          <div class="mb-4 photo-upload-card p-3 rounded-3">
+            <label id="photoLabel" for="issuePhoto" class="form-label fw-semibold">
+              📷 แนบรูปภาพประกอบปัญหา <span class="text-muted font-size-12 fw-normal">(ถ้ามี เช่น ภาพหน้าจอ Error, อาการเสีย หรือสภาพอุปกรณ์)</span>
+            </label>
+            <input type="file" id="issuePhoto" class="form-control" accept="image/*" onchange="previewSelectedPhoto(this)">
+            <div class="d-flex justify-content-between align-items-center mt-1">
+              <small class="text-muted"><i class="bi bi-info-circle"></i> รองรับ JPG, PNG — ขนาดไม่เกิน 10 MB (บีบอัดรูปให้อัตโนมัติ)</small>
+              <small id="photoSizeNote" class="text-primary fw-medium"></small>
+            </div>
+            <div id="photoPreviewBox" class="mt-2 d-none-init align-items-center gap-2">
+              <img id="photoPreviewImg" src="" alt="ตัวอย่างรูป" class="photo-preview-image">
+              <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="clearPhotoSelection()">
+                <i class="bi bi-trash me-1"></i>ยกเลิกรูปนี้
+              </button>
+            </div>
+          </div>
+
           <div id="newPcSection" class="d-none-init">
             <div class="newpc-box">
               <h5><i class="bi bi-laptop"></i> ข้อมูลประกอบการพิจารณาขอเครื่องใหม่</h5>
-              <div class="mb-3">
-                <label for="oldPcPhoto" class="form-label fw-semibold">
-                  📷 แนบรูปถ่ายเครื่องเก่า <span class="text-danger">* (จำเป็นต้องแนบ)</span>
-                </label>
-                <input type="file" id="oldPcPhoto" class="form-control" accept="image/*" onchange="previewSelectedPhoto(this)">
-                <div class="d-flex justify-content-between align-items-center mt-1">
-                  <small class="text-muted"><i class="bi bi-info-circle"></i> รองรับ JPG, PNG — ขนาดไม่เกิน 10 MB</small>
-                  <small id="photoSizeNote" class="text-primary fw-medium"></small>
-                </div>
-                <div id="photoPreviewBox" class="mt-2 d-none-init">
-                  <img id="photoPreviewImg" src="" alt="ตัวอย่างรูป" class="photo-preview-image">
-                </div>
-              </div>
               <div class="mb-3">
                 <label for="reasonNewPc" class="form-label fw-semibold">
                   📝 เหตุผลความจำเป็นในการขอเครื่องใหม่
@@ -273,7 +300,7 @@
   </main>
   <div id="submitOverlay" role="dialog" aria-modal="true">
     <div class="submit-card">
-      <div class="submit-spinner" id="overlaySpinner"></div>
+      <div class="submit-spinner"></div>
       <div class="submit-title">กำลังบันทึกข้อมูล...</div>
       <div class="submit-subtitle">กรุณารอสักครู่ อย่าเพิ่งปิดหน้าต่างนี้</div>
       <ul class="step-list">
@@ -305,5 +332,43 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="app.js"></script>
+  <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+          .catch(err => console.warn('PWA Service Worker registration failed:', err));
+      });
+    }
+
+    // PWA Install Prompt Handler
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.style.display = 'flex';
+    });
+
+    function triggerPwaInstall() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(choice => {
+        if (choice.outcome === 'accepted') {
+          const banner = document.getElementById('pwaInstallBanner');
+          if (banner) banner.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.style.display = 'none';
+      deferredPrompt = null;
+      console.log('IT Support App was successfully installed');
+    });
+  </script>
 </body>
 </html>

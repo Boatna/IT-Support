@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyK49DmlapC95D-v8RHDOqRO8acT3-LTqmACiz2Pr5ffjCHt5TIF-qWUD2wkptlJGmd/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzFn1VEju-pTLm9KXxOY-aMpXg2V9S27MX4QZ_wJbiPXs7IEZrzGC5HP62VLxMc8dp3/exec";
 
 const TOKEN_KEY   = "it_token";
 const MY_NAME_KEY = "it_my_name";
@@ -134,7 +134,13 @@ function registerTableFilter() {
     if (filters.status && tr.dataset.status !== filters.status) return false;
     if (filters.flag === "external" && tr.dataset.external !== "1") return false;
     if (filters.flag === "urgent" && tr.dataset.priority !== "ด่วนมาก") return false;
-    if (filters.assignee && tr.dataset.assignee !== filters.assignee) return false;
+    
+    // กรองช่าง: รองรับทั้งช่างรายคน และกรณี "ยังไม่มีผู้รับผิดชอบ"
+    if (filters.assignee === "__UNASSIGNED__") {
+      if (tr.dataset.assignee && tr.dataset.assignee.trim()) return false;
+    } else if (filters.assignee && tr.dataset.assignee !== filters.assignee) {
+      return false;
+    }
     return true;
   });
 }
@@ -200,7 +206,7 @@ function logoutIT() {
   }).then(result => {
     if (result.isConfirmed) {
       const tk = getToken();
-      if (tk) {   // ยกเลิก token ที่ฝั่งเซิร์ฟเวอร์ด้วย (ไม่รอผล)
+      if (tk) {
         fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -271,7 +277,10 @@ async function loadITStaff() {
 
     const filterSel = document.getElementById("filterAssigneeSelect");
     if (filterSel) {
-      filterSel.innerHTML = '<option value="">-- แสดงช่างทุกคน --</option>';
+      filterSel.innerHTML = `
+        <option value="">-- แสดงช่างทุกคน --</option>
+        <option value="__UNASSIGNED__">⚠️ ยังไม่มีผู้รับผิดชอบ</option>
+      `;
       if (Array.isArray(staffList)) {
         staffList.forEach(name => {
           if (name && name !== "-- เลือกผู้รับผิดชอบ --") {
@@ -292,7 +301,6 @@ async function loadITStaff() {
 const photoCache = {};     // url -> data URL (กันโหลดรูปซ้ำ)
 let photoReqSeq = 0;       // กันรูปของ Ticket เก่าไปทับ Ticket ที่เปิดใหม่
 
-// โหลดรูปผ่าน Apps Script (ได้แม้ไฟล์ไม่ได้แชร์) ถ้าไม่ได้ค่อยลอง thumbnail ของ Drive
 async function loadTicketPhoto(url, imgEl, statusEl) {
   const seq = ++photoReqSeq;
   imgEl.style.display = "none";
@@ -325,7 +333,7 @@ async function loadTicketPhoto(url, imgEl, statusEl) {
 
 let _refreshing = false;
 async function refreshData(showFeedback = true) {
-  if (_refreshing) return;   // กัน Auto-Sync กับปุ่ม Sync ทำงานทับกัน (DataTable พังได้)
+  if (_refreshing) return;
   _refreshing = true;
   const syncIcon = document.getElementById("syncIcon");
   if (syncIcon) syncIcon.classList.add("syncing-spin");
@@ -333,7 +341,7 @@ async function refreshData(showFeedback = true) {
   try {
     const ok = await loadITTickets();
     if (!ok) return;
-    renderStats(globalTickets);   // คำนวณสถิติจากข้อมูลชุดเดียวกับตาราง ตัวเลขจึงตรงกันเสมอ และเรียก API แค่ครั้งเดียว
+    renderStats(globalTickets);
     updateLastSyncLabel();
     if (showFeedback && getToken()) {
       Swal.mixin({
@@ -392,7 +400,7 @@ async function loadITTickets() {
     tbody.innerHTML = globalTickets.map(r => {
       const isExt = _isExternalTrue(r.isExternal);
       const extBadge = isExt ? '<br><span class="badge bg-info text-dark mt-1"><i class="bi bi-truck me-1"></i>ซ่อมนอก</span>' : '';
-      const empIdClean = r.empId ? String(r.empId).replace(/\.0$/, "") : "-";
+      const empIdClean = r.empId ? String(r.empId).replace(/\.0+$/, "") : "-";
       const dateDisplay = r.date ? String(r.date).split(" ")[0] : "-";
       const timeAgo = _formatRelativeTime(r.date);
       const issueLabel = ISSUE_LABELS[r.issue] || r.issue || "-";
@@ -400,9 +408,18 @@ async function loadITTickets() {
         ? `<span class="assignee-line"><i class="bi bi-person-gear me-1"></i>${_esc(r.assignee)}</span>`
         : '<span class="assignee-line text-muted"><i class="bi bi-person-dash me-1"></i>ยังไม่มีผู้รับผิดชอบ</span>';
 
+      let procureBadges = '';
+      if (r.prNo || r.poNo || r.newAsset) {
+        const parts = [];
+        if (r.prNo) parts.push(`PR: ${_esc(r.prNo)}`);
+        if (r.poNo) parts.push(`PO: ${_esc(r.poNo)}`);
+        if (r.newAsset) parts.push(`Asset ใหม่: ${_esc(r.newAsset)}`);
+        procureBadges = `<div class="mt-1"><span class="badge bg-warning text-dark font-size-11" title="${parts.join(' | ')}"><i class="bi bi-cart-check me-1"></i>${parts.join(' | ')}</span></div>`;
+      }
+
       return `
         <tr data-ticketid="${_esc(r.ticketId)}" data-status="${_esc(r.status)}" data-priority="${_esc(r.priority)}" data-assignee="${_esc(r.assignee || '')}" data-external="${isExt ? '1' : '0'}" style="cursor:pointer;">
-          <td class="fw-bold text-info" style="white-space:nowrap;">
+          <td data-order="${_esc(r.ticketId)}" class="fw-bold text-info" style="white-space:nowrap;">
             ${_esc(r.ticketId)}<br>
             <small class="text-muted fw-normal">${_esc(dateDisplay)}</small>
             <span class="d-block text-muted" style="font-size:11px;">${_esc(timeAgo)}</span>
@@ -422,7 +439,7 @@ async function loadITTickets() {
             </div>
           </td>
           <td>${_priorityBadge(r.priority)}</td>
-          <td>${_statusBadge(r.status)}${extBadge}${assigneeLine}</td>
+          <td>${_statusBadge(r.status)}${extBadge}${assigneeLine}${procureBadges}</td>
           <td class="text-center">
             <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3 shadow-sm">
               <i class="bi bi-sliders me-1"></i>Manage
@@ -538,7 +555,6 @@ function computeStats(tickets) {
   return stats;
 }
 
-// อัปเดตกราฟเดิมแทนการสร้างใหม่ทุก 30 วินาที (ไม่กะพริบ)
 function upsertChart(key, canvasId, config) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -620,7 +636,7 @@ function openITModal(ticketId) {
   const t = globalTickets.find(x => String(x.ticketId) === String(ticketId));
   if (!t) return;
 
-  const empIdClean = t.empId ? String(t.empId).replace(/\.0$/, "") : "-";
+  const empIdClean = t.empId ? String(t.empId).replace(/\.0+$/, "") : "-";
   const s = v => (v === undefined || v === null) ? "" : String(v).trim();
 
   document.getElementById("m_ticketId").innerText = t.ticketId;
@@ -648,6 +664,31 @@ function openITModal(ticketId) {
 
   _updateTimeline(t.status);
 
+  // รูปภาพแนบ: แสดงผลให้ทุก Ticket ที่มีรูปภาพ ไม่จำกัดเฉพาะขอเครื่องใหม่
+  const photoContainer = document.getElementById("m_photoContainer");
+  const photoImg       = document.getElementById("m_photoImg");
+  const photoLink      = document.getElementById("m_photoLink");
+  const photoLinkFull  = document.getElementById("m_photoLinkFull");
+
+  if (t.photo && String(t.photo).startsWith("http")) {
+    if (photoImg) {
+      photoImg.style.maxHeight = "340px";
+      photoImg.title = "คลิกเพื่อขยายรูป";
+      loadTicketPhoto(t.photo, photoImg, document.getElementById("m_photoStatus"));
+    }
+    if (photoLink)     photoLink.href = t.photo;
+    if (photoLinkFull) {
+      photoLinkFull.href = t.photo;
+      photoLinkFull.title = "คลิกเพื่อขยายรูป";
+      photoLinkFull.style.cursor = "zoom-in";
+      photoLinkFull.onclick = function (ev) { ev.preventDefault(); showPhotoPopup(t.photo, t.ticketId); };
+    }
+    if (photoContainer) photoContainer.style.display = "block";
+  } else if (photoContainer) {
+    photoContainer.style.display = "none";
+  }
+
+  // ข้อมูลเฉพาะกรณีขอเครื่องใหม่
   const isNewPc = (t.issue === "Request_New_PC");
   const newPcSec = document.getElementById("m_newPcSection");
   if (newPcSec) {
@@ -665,29 +706,6 @@ function openITModal(ticketId) {
           badgesContainer.innerHTML = '<span class="text-muted small">ไม่มีการระบุโปรแกรมเพิ่มเติม</span>';
         }
       }
-
-      const photoContainer = document.getElementById("m_photoContainer");
-      const photoImg       = document.getElementById("m_photoImg");
-      const photoLink      = document.getElementById("m_photoLink");
-      const photoLinkFull  = document.getElementById("m_photoLinkFull");
-
-      if (t.photo && String(t.photo).startsWith("http")) {
-        if (photoImg) {
-          photoImg.style.maxHeight = "340px";
-          photoImg.title = "คลิกเพื่อขยายรูป";
-          loadTicketPhoto(t.photo, photoImg, document.getElementById("m_photoStatus"));
-        }
-        if (photoLink)     photoLink.href = t.photo;
-        if (photoLinkFull) {
-          photoLinkFull.href = t.photo;
-          photoLinkFull.title = "คลิกเพื่อขยายรูป";
-          photoLinkFull.style.cursor = "zoom-in";
-          photoLinkFull.onclick = function (ev) { ev.preventDefault(); showPhotoPopup(t.photo, t.ticketId); };
-        }
-        if (photoContainer) photoContainer.style.display = "block";
-      } else if (photoContainer) {
-        photoContainer.style.display = "none";
-      }
     }
   }
 
@@ -697,7 +715,7 @@ function openITModal(ticketId) {
   document.getElementById("modalNotes").value    = t.note || "";
   const asgSel = document.getElementById("modalAssignee");
   const curAsg = s(t.assignee);
-  if (asgSel.options.length === 0) {   // กรณีโหลดรายชื่อช่างไม่สำเร็จ ต้องไม่ทำให้ผู้รับผิดชอบเดิมหายตอนบันทึก
+  if (asgSel.options.length === 0) {
     asgSel.add(new Option("-- เลือกผู้รับผิดชอบ --", ""));
   }
   if (curAsg && !Array.from(asgSel.options).some(o => o.value === curAsg)) {
@@ -714,12 +732,66 @@ function openITModal(ticketId) {
   if (extReasonInput) extReasonInput.value = t.externalReason || "";
   if (extReasonBox) extReasonBox.style.display = isExt ? "block" : "none";
 
+  // ฟิลด์ติดตามการจัดซื้อเครื่องใหม่ (PR / PO / เลข Asset ใหม่)
+  const prInput = document.getElementById("modalPrNo");
+  const poInput = document.getElementById("modalPoNo");
+  const newAssetInput = document.getElementById("modalNewAsset");
+  if (prInput) prInput.value = t.prNo || "";
+  if (poInput) poInput.value = t.poNo || "";
+  if (newAssetInput) newAssetInput.value = t.newAsset || "";
+
+  const hintBadge = document.getElementById("procureHintBadge");
+  if (hintBadge) {
+    if (isNewPc) {
+      hintBadge.className = "badge bg-warning text-dark font-size-11";
+      hintBadge.innerText = "แนะนำสำหรับงานขอเครื่องใหม่";
+    } else {
+      hintBadge.className = "badge bg-secondary font-size-11";
+      hintBadge.innerText = "ออปชัน";
+    }
+  }
+
   onStatusChange();
 
   if (!itModalInstance) {
     itModalInstance = new bootstrap.Modal(document.getElementById('itModal'));
   }
   itModalInstance.show();
+}
+
+/**
+ * ฟังก์ชันใส่ข้อความสำเร็จรูป (Quick Notes)
+ * @param {string} text ข้อความบันทึก
+ * @param {boolean} isDone ถ้าเป็นจริง ปรับสถานะเป็น "เสร็จสิ้น" อัตโนมัติ
+ */
+function insertQuickNote(text, isDone) {
+  const noteArea = document.getElementById("modalNotes");
+  if (!noteArea) return;
+  const current = noteArea.value.trim();
+  if (current.includes(text)) {
+    return;
+  }
+  if (current) {
+    noteArea.value = current + "\n" + text;
+  } else {
+    noteArea.value = text;
+  }
+  noteArea.focus();
+
+  const statusSel = document.getElementById("modalStatus");
+  if (statusSel) {
+    if (isDone) {
+      if (statusSel.value !== "เสร็จสิ้น") {
+        statusSel.value = "เสร็จสิ้น";
+        onStatusChange();
+      }
+    } else {
+      if (statusSel.value === "รอดำเนินการ") {
+        statusSel.value = "กำลังดำเนินการ";
+        onStatusChange();
+      }
+    }
+  }
 }
 
 function _updateTimeline(status) {
@@ -805,24 +877,15 @@ async function saveITUpdate() {
   const notes      = document.getElementById("modalNotes").value.trim();
   const isExternal = document.getElementById("isExternalCheck").checked;
   const extReason  = document.getElementById("externalReason").value.trim();
+  const prNo       = document.getElementById("modalPrNo") ? document.getElementById("modalPrNo").value.trim() : "";
+  const poNo       = document.getElementById("modalPoNo") ? document.getElementById("modalPoNo").value.trim() : "";
+  const newAsset   = document.getElementById("modalNewAsset") ? document.getElementById("modalNewAsset").value.trim() : "";
 
   if (!ticketId) {
     return Swal.fire("แจ้งเตือน", "ไม่พบรหัส Ticket กรุณาปิดหน้าต่างแล้วเปิดใหม่อีกครั้ง", "warning");
   }
   if (isExternal && !extReason) {
     return Swal.fire("แจ้งเตือน", "กรุณาระบุชื่อบริษัทหรือเหตุผลที่ส่งซ่อมภายนอก", "warning");
-  }
-
-  if (status === "เสร็จสิ้น" && !notes) {
-    const confirm = await Swal.fire({
-      title: "ยังไม่ได้ระบุบันทึกการแก้ไข",
-      text: "ต้องการบันทึกสถานะ 'เสร็จสิ้น' โดยไม่ระบุรายละเอียดการซ่อมหรือไม่?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "บันทึกเลย",
-      cancelButtonText: "กลับไปพิมพ์บันทึก"
-    });
-    if (!confirm.isConfirmed) return;
   }
 
   isSaving = true;
@@ -836,7 +899,7 @@ async function saveITUpdate() {
   });
 
   try {
-    const result = await api("updateTicket", { row, ticketId, status, assignee, notes, isExternal, extReason });
+    const result = await api("updateTicket", { row, ticketId, status, assignee, notes, isExternal, extReason, prNo, poNo, newAsset });
 
     if (result.success) {
       let text = "บันทึกข้อมูลและส่งแจ้งเตือนเรียบร้อยแล้ว";
@@ -886,11 +949,10 @@ function _getDriveThumbnail(url, width) {
   return url;
 }
 
-// แสดงรูปเครื่องเก่าแบบขยายใน popup
 function showPhotoPopup(url, ticketId) {
   const wrap = document.createElement("div");
   const img = document.createElement("img");
-  img.alt = "รูปเครื่องเก่า";
+  img.alt = "รูปภาพแนบ";
   img.style.cssText = "max-width:100%;max-height:70vh;border-radius:8px;display:block;margin:0 auto;";
   img.src = photoCache[url] || _getDriveThumbnail(url, 1600);
   img.onerror = function () {
@@ -899,7 +961,7 @@ function showPhotoPopup(url, ticketId) {
   wrap.appendChild(img);
 
   Swal.fire({
-    title: ticketId ? "รูปเครื่องเก่า — " + ticketId : "รูปเครื่องเก่า",
+    title: ticketId ? "รูปภาพแนบ — " + ticketId : "รูปภาพแนบ",
     html: wrap,
     width: "min(92vw, 900px)",
     showCloseButton: true,
@@ -930,11 +992,32 @@ function _formatRelativeTime(dateStr) {
   }
   if (year > 2400) year -= 543;
 
-  const d = new Date(year, month, day);
+  let d;
+  if (parts[1]) {
+    const tParts = parts[1].split(":");
+    const hours = parseInt(tParts[0], 10) || 0;
+    const mins = parseInt(tParts[1], 10) || 0;
+    const secs = parseInt(tParts[2], 10) || 0;
+    d = new Date(year, month, day, hours, mins, secs);
+  } else {
+    d = new Date(year, month, day);
+  }
   if (isNaN(d.getTime())) return "";
+
+  const now = new Date();
+  const diffMs = now - d;
+  const diffSec = Math.round(diffMs / 1000);
+  const diffMin = Math.round(diffSec / 60);
+  const diffHour = Math.round(diffMin / 60);
+
+  if (diffSec < 60) return "เมื่อสักครู่";
+  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+  if (diffHour < 24 && now.getDate() === d.getDate()) return `${diffHour} ชั่วโมงที่แล้ว`;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((today - d) / (1000 * 60 * 60 * 24));
+  const dDate = new Date(year, month, day);
+  const diffDays = Math.round((today - dDate) / (1000 * 60 * 60 * 24));
 
   if (diffDays <= 0) return "วันนี้";
   if (diffDays === 1) return "เมื่อวานนี้";

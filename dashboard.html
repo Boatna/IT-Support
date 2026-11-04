@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#11121d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="IT Control">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+
   <title>IT Control Center Dashboard — ศูนย์ควบคุมและบริหารจัดการงานสารสนเทศ</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -32,12 +40,33 @@
       <button class="btn btn-info w-100 rounded-pill text-white fw-bold py-2 shadow-sm" onclick="checkPin()">
         <i class="bi bi-box-arrow-in-right me-1"></i>เข้าสู่ระบบ
       </button>
+
+      <div id="pwaLoginInstallBox" class="d-none-init mt-3">
+        <button class="btn btn-outline-info w-100 rounded-pill py-2 font-size-12 shadow-sm" type="button" onclick="triggerPwaInstall()">
+          <i class="bi bi-download me-1"></i>ติดตั้งแอป IT Control บนเครื่อง
+        </button>
+      </div>
+
       <p class="text-muted mt-4 mb-0 font-size-12">
         พนักงานทั่วไปแจ้งซ่อมได้ที่ <a href="Index.html" class="text-info text-decoration-none">หน้าแจ้งปัญหา</a>
       </p>
     </div>
   </div>
   <div id="appContent" class="container-fluid mt-3 mb-5 px-3 px-md-4">
+
+    <div id="pwaDashboardBanner" class="pwa-install-banner d-none-init mb-3" style="background:#1c1e2e; border-color:#2b2e47;">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-laptop-fill text-info fs-4 me-2"></i>
+        <div>
+          <strong class="d-block text-white font-size-13">ติดตั้ง IT Control Center ลงบนเครื่องของคุณ</strong>
+          <small class="text-muted">เปิดใช้งานเป็นหน้าต่างโปรแกรมแยกเดี่ยว เข้าถึงสะดวกรวดเร็ว</small>
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-info text-white rounded-pill px-3 shadow-sm" onclick="triggerPwaInstall()">
+        <i class="bi bi-download me-1"></i>ติดตั้งแอป
+      </button>
+    </div>
+
     <header class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
       <div>
         <h3 class="fw-bold m-0 text-white">
@@ -53,7 +82,7 @@
           <input class="form-check-input" type="checkbox" id="autoSyncToggle" checked onchange="toggleAutoSync(this)">
           <label class="form-check-label text-muted small" for="autoSyncToggle">Auto-Sync (30s)</label>
         </div>
-        <button class="btn btn-outline-info rounded-pill btn-sm d-flex align-items-center px-3" id="syncBtn" onclick="refreshData(true)">
+        <button class="btn btn-outline-info rounded-pill btn-sm d-flex align-items-center px-3" onclick="refreshData(true)">
           <i class="bi bi-arrow-clockwise me-1" id="syncIcon"></i>Sync Data
         </button>
         <a href="Index.html" class="btn btn-outline-secondary rounded-pill btn-sm d-flex align-items-center px-3">
@@ -149,6 +178,7 @@
         <div class="col-auto">
           <select id="filterAssigneeSelect" class="form-select form-select-sm py-1" onchange="filterByAssignee(this.value)">
             <option value="">-- แสดงช่างทุกคน --</option>
+            <option value="__UNASSIGNED__">⚠️ ยังไม่มีผู้รับผิดชอบ</option>
           </select>
         </div>
       </div>
@@ -243,30 +273,30 @@
                 <div class="detail-value text-pre-line" id="m_detail">-</div>
               </div>
 
+              <div id="m_photoContainer" class="detail-box border border-secondary d-none-init">
+                <div class="detail-label text-info"><i class="bi bi-image me-1"></i>รูปภาพแนบจากผู้แจ้ง</div>
+                <div class="photo-thumb-box mt-2">
+                  <div id="m_photoStatus" class="text-muted small py-3"></div>
+                  <a href="#" id="m_photoLinkFull" target="_blank">
+                    <img id="m_photoImg" src="" alt="รูปภาพแนบ">
+                  </a>
+                  <div class="mt-2">
+                    <a href="#" id="m_photoLink" target="_blank" class="btn btn-sm btn-outline-info rounded-pill">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>เปิดดูไฟล์ต้นฉบับใน Google Drive
+                    </a>
+                  </div>
+                </div>
+              </div>
+
               <div id="m_newPcSection" class="detail-box border border-info d-none-init">
-                <h6 class="text-info mb-3"><i class="bi bi-laptop me-1"></i>ข้อมูลการขอเครื่องใหม่</h6>
+                <h6 class="text-info mb-3"><i class="bi bi-laptop me-1"></i>ข้อมูลประกอบการขอเครื่องใหม่</h6>
                 <div class="detail-label">ประเภทเครื่องที่ขอ</div>
                 <div class="detail-value text-warning fw-bold fs-6" id="m_pcType">-</div>
                 <div class="detail-label">เหตุผลความจำเป็น</div>
                 <div class="detail-value text-pre-line" id="m_reasonPc">-</div>
                 
                 <div class="detail-label mt-2">โปรแกรมที่จะติดตั้งพร้อมเครื่อง</div>
-                <div id="m_reqSoftBadges" class="mb-3"></div>
-
-                <div id="m_photoContainer" class="d-none-init">
-                  <div class="detail-label">รูปภาพเครื่องเก่า</div>
-                  <div class="photo-thumb-box mt-1">
-                    <div id="m_photoStatus" class="text-muted small py-3"></div>
-                    <a href="#" id="m_photoLinkFull" target="_blank">
-                      <img id="m_photoImg" src="" alt="รูปเครื่องเก่า">
-                    </a>
-                    <div class="mt-2">
-                      <a href="#" id="m_photoLink" target="_blank" class="btn btn-sm btn-outline-info rounded-pill">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>เปิดดูไฟล์ต้นฉบับใน Google Drive
-                      </a>
-                    </div>
-                  </div>
-                </div>
+                <div id="m_reqSoftBadges" class="mb-2"></div>
               </div>
             </div>
 
@@ -309,9 +339,49 @@
                       placeholder="ระบุชื่อบริษัท หรือเหตุผลที่ต้องส่งซ่อมภายนอก..."></textarea>
                   </div>
                 </div>
+                <div class="mb-3 p-3 rounded procurement-box">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-warning fw-semibold small">
+                      <i class="bi bi-cart-check me-1"></i>ข้อมูลจัดซื้อ (PR / PO / Asset ใหม่)
+                    </span>
+                    <span id="procureHintBadge" class="badge bg-secondary font-size-11">ออปชัน</span>
+                  </div>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label for="modalPrNo" class="form-label text-muted small m-0">เลขที่ PR</label>
+                      <input type="text" id="modalPrNo" class="form-control form-control-sm" placeholder="เช่น PR67-0012">
+                    </div>
+                    <div class="col-6">
+                      <label for="modalPoNo" class="form-label text-muted small m-0">เลขที่ PO</label>
+                      <input type="text" id="modalPoNo" class="form-control form-control-sm" placeholder="เช่น PO67-0045">
+                    </div>
+                    <div class="col-12">
+                      <label for="modalNewAsset" class="form-label text-muted small m-0">
+                        เลข Asset เครื่องใหม่ <span class="text-info font-size-11">(เมื่อได้รับเครื่อง)</span>
+                      </label>
+                      <input type="text" id="modalNewAsset" class="form-control form-control-sm font-monospace text-uppercase" placeholder="เช่น IE-IT-PC-0123">
+                    </div>
+                  </div>
+                </div>
 
                 <div class="mb-2">
-                  <label for="modalNotes" class="form-label text-muted small">บันทึกการแก้ไข / ข้อความแจ้งผู้ใช้</label>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="modalNotes" class="form-label text-muted small m-0">บันทึกการแก้ไข / ข้อความแจ้งผู้ใช้</label>
+                  </div>
+                  <div class="quick-notes-container mb-2">
+                    <div class="text-muted font-size-11 mb-1"><i class="bi bi-lightning-charge text-warning me-1"></i>ข้อความสำเร็จรูป (คลิกเพื่อใส่บันทึกด่วน):</div>
+                    <div class="d-flex flex-wrap gap-1">
+                      <span class="quick-note-pill" onclick="insertQuickNote('ติดตั้ง/อัปเดตโปรแกรมเรียบร้อยแล้ว ทดสอบใช้งานได้ปกติ', true)">✅ ติดตั้งโปรแกรมแล้ว</span>
+                      <span class="quick-note-pill" onclick="insertQuickNote('เปลี่ยนอุปกรณ์/สายสัญญาณใหม่ ทดสอบใช้งานได้ปกติ', true)">✅ เปลี่ยนอุปกรณ์แล้ว</span>
+                      <span class="quick-note-pill" onclick="insertQuickNote('เปิด PR จัดซื้อเครื่องใหม่เรียบร้อย อยู่ระหว่างรอออก PO', false)">📝 เปิด PR แล้ว</span>
+                      <span class="quick-note-pill" onclick="insertQuickNote('ได้รับเครื่องใหม่เรียบร้อยแล้ว กำลังดำเนินการลงโปรแกรมและติด Tag Asset', false)">💻 ได้รับเครื่องใหม่</span>
+                      <span class="quick-note-pill" onclick="insertQuickNote('แก้ไขระบบเครือข่าย/การเชื่อมต่อเรียบร้อย ใช้งานได้ปกติ', true)">🌐 เครือข่ายปกติ</span>
+                      <span class="quick-note-pill" onclick="insertQuickNote('นำเครื่องเข้าตรวจเช็กที่ฝ่าย IT อยู่ระหว่างดำเนินการ', false)">📦 รับเครื่องเข้าเช็ก</span>
+                      <span class="quick-note-pill" onclick="insertQuickNote('ส่งซ่อมบริษัทภายนอก รอรับเครื่องคืนประมาณ 3-5 วันทำการ', false)">🚚 ส่งซ่อมนอก</span>
+                      <span class="quick-note-pill" onclick="insertQuickNote('ตรวจสอบแล้วไม่พบปัญหาผิดปกติ / ใช้งานได้ตามปกติ', true)">🔍 ไม่พบปัญหา</span>
+                    </div>
+                  </div>
+
                   <textarea id="modalNotes" class="form-control" rows="4" maxlength="3000"
                     placeholder="บันทึกรายละเอียดการดำเนินงานหรือวิธีแก้ไข..."></textarea>
                   <small class="text-muted font-size-11">
@@ -346,5 +416,46 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="dashboard.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Dashboard PWA registered:', reg.scope))
+          .catch(err => console.warn('Dashboard PWA registration failed:', err));
+      });
+    }
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const banner = document.getElementById('pwaDashboardBanner');
+      if (banner) banner.style.display = 'flex';
+      const loginBox = document.getElementById('pwaLoginInstallBox');
+      if (loginBox) loginBox.style.display = 'block';
+    });
+
+    function triggerPwaInstall() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(choice => {
+        if (choice.outcome === 'accepted') {
+          const banner = document.getElementById('pwaDashboardBanner');
+          if (banner) banner.style.display = 'none';
+          const loginBox = document.getElementById('pwaLoginInstallBox');
+          if (loginBox) loginBox.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      const banner = document.getElementById('pwaDashboardBanner');
+      if (banner) banner.style.display = 'none';
+      const loginBox = document.getElementById('pwaLoginInstallBox');
+      if (loginBox) loginBox.style.display = 'none';
+      deferredPrompt = null;
+    });
+  </script>
 </body>
 </html>

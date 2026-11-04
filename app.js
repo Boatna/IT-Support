@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyK49DmlapC95D-v8RHDOqRO8acT3-LTqmACiz2Pr5ffjCHt5TIF-qWUD2wkptlJGmd/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzFn1VEju-pTLm9KXxOY-aMpXg2V9S27MX4QZ_wJbiPXs7IEZrzGC5HP62VLxMc8dp3/exec";
 
 let allEmployees = [];
 let activeAutocompleteIndex = -1;
@@ -69,7 +69,7 @@ async function loadEmployees() {
     const r = await Swal.fire({
       icon: "warning",
       title: "โหลดรายชื่อพนักงานไม่สำเร็จ",
-      text: "ระบบไม่สามารถดึงรายชื่อพนักงานได้ในขณะนี้ จึงยังค้นหาและเลือกผู้แจ้งไม่ได้ กรุณาลองใหม่อีกครั้ง",
+      text: "ระบบไม่สามารถดึงรายชื่อพนักงานได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง",
       showCancelButton: true,
       confirmButtonText: "ลองใหม่",
       cancelButtonText: "ปิด"
@@ -80,7 +80,13 @@ async function loadEmployees() {
   if (overlay) overlay.style.display = "none";
 }
 
-window.addEventListener("DOMContentLoaded", loadEmployees);
+window.addEventListener("DOMContentLoaded", () => {
+  loadEmployees();
+  if (window.location.hash === "#trackTab") {
+    const trackBtn = document.querySelector("button[onclick*='trackTab']");
+    if (trackBtn) switchTab('trackTab', trackBtn);
+  }
+});
 
 function switchTab(tabId, el) {
   document.querySelectorAll(".section-div").forEach(d => d.classList.remove("active-section"));
@@ -89,6 +95,14 @@ function switchTab(tabId, el) {
   const target = document.getElementById(tabId);
   if (target) target.classList.add("active-section");
   if (el) el.classList.add("active");
+  if (tabId === "trackTab") {
+    const curEmpId = document.getElementById("empId")?.value;
+    const trackInput = document.getElementById("trackEmpId");
+    if (curEmpId && trackInput && !trackInput.value.trim()) {
+      trackInput.value = curEmpId;
+      loadMyTickets();
+    }
+  }
 }
 
 const searchInput = document.getElementById("searchEmpInput");
@@ -102,8 +116,9 @@ if (searchInput) {
 
     const clearBtn = document.getElementById("clearEmpBtn");
     if (clearBtn) clearBtn.style.display = val ? "inline-block" : "none";
-    if (document.getElementById("empId").value &&
-        this.value !== `${document.getElementById("empId").value} — ${document.getElementById("empName").value}`) {
+    const curEmpId = document.getElementById("empId").value;
+    const curEmpName = document.getElementById("empName").value;
+    if (curEmpId && this.value !== `${curEmpId} — ${curEmpName}`) {
       _clearEmployeeFields();
     }
 
@@ -113,11 +128,16 @@ if (searchInput) {
     }
 
     const matches = allEmployees
-      .filter(e => String(e.id).toLowerCase().includes(val) || String(e.name).toLowerCase().includes(val))
-      .slice(0, 15);
+      .filter(e =>
+        String(e.id || "").toLowerCase().includes(val) ||
+        String(e.name || "").toLowerCase().includes(val) ||
+        String(e.dept || "").toLowerCase().includes(val) ||
+        String(e.position || "").toLowerCase().includes(val)
+      )
+      .slice(0, 20);
 
     if (matches.length === 0) {
-      autocompleteList.innerHTML = '<div class="list-group-item text-muted text-center py-3">ไม่พบข้อมูลพนักงาน</div>';
+      autocompleteList.innerHTML = '<div class="list-group-item text-muted text-center py-3">ไม่พบข้อมูลพนักงานที่ตรงกับคำค้นหา</div>';
       autocompleteList.style.display = "block";
       return;
     }
@@ -226,7 +246,7 @@ function selectEmployee(emp) {
   const phoneInput = document.getElementById("contactPhone");
   if (phoneInput) {
     const cur = phoneInput.value.trim();
-    if (!cur || cur === lastAutoPhone) {   // ไม่ทับเบอร์ที่ผู้ใช้พิมพ์เอง แต่เปลี่ยนตามพนักงานคนใหม่ได้
+    if (!cur || cur === lastAutoPhone) {
       lastAutoPhone = String(emp.phone || "").trim();
       phoneInput.value = lastAutoPhone;
     }
@@ -240,13 +260,16 @@ function selectEmployee(emp) {
 
 function _clearEmployeeFields() {
   ["empId", "empName", "empDept", "empPosition", "empPlant"].forEach(id => {
-    document.getElementById(id).value = "";
+    const el = document.getElementById(id);
+    if (el) el.value = "";
   });
   _hide(document.getElementById("employeeInfoBox"));
 
   const assetInput = document.getElementById("assetTag");
-  assetInput.value = "";
-  assetInput.classList.remove("field-autofilled");
+  if (assetInput) {
+    assetInput.value = "";
+    assetInput.classList.remove("field-autofilled");
+  }
   _hide(document.getElementById("d_assetTagWrap"));
   _hide(document.getElementById("assetAutoLabel"));
   _hide(document.getElementById("assetTagHint"));
@@ -280,12 +303,22 @@ document.addEventListener("pointerdown", function (e) {
 });
 
 function toggleNewPcSection() {
-  const isPC = document.getElementById("issueType").value === "Request_New_PC";
+  const issueVal = document.getElementById("issueType").value;
+  const isPC = (issueVal === "Request_New_PC");
   const sec  = document.getElementById("newPcSection");
   if (sec) sec.style.display = isPC ? "block" : "none";
 
   const pcSelect = document.getElementById("pcTypeSelect");
   if (pcSelect) pcSelect.required = isPC;
+
+  const photoLabel = document.getElementById("photoLabel");
+  if (photoLabel) {
+    if (isPC) {
+      photoLabel.innerHTML = '📷 แนบรูปถ่ายเครื่องเก่า <span class="text-danger">* (จำเป็นต้องแนบสำหรับขอเครื่องใหม่)</span>';
+    } else {
+      photoLabel.innerHTML = '📷 แนบรูปภาพประกอบปัญหา <span class="text-muted font-size-12 fw-normal">(ถ้ามี เช่น ภาพหน้าจอ Error, อาการเสีย หรือสภาพอุปกรณ์)</span>';
+    }
+  }
 
   if (!isPC) {
     if (pcSelect) pcSelect.value = "";
@@ -293,13 +326,8 @@ function toggleNewPcSection() {
     if (softSec) softSec.style.display = "none";
     const softGrid = document.getElementById("softwareGrid");
     if (softGrid) softGrid.innerHTML = "";
-
-    const fileInput = document.getElementById("oldPcPhoto");
-    if (fileInput) fileInput.value = "";
-    const previewBox = document.getElementById("photoPreviewBox");
-    if (previewBox) previewBox.style.display = "none";
-    const note = document.getElementById("photoSizeNote");
-    if (note) note.innerText = "";
+    const reasonArea = document.getElementById("reasonNewPc");
+    if (reasonArea) reasonArea.value = "";
   }
 }
 
@@ -360,9 +388,20 @@ function previewSelectedPhoto(input) {
   const reader = new FileReader();
   reader.onload = function (e) {
     if (previewImg) previewImg.src = e.target.result;
-    if (previewBox) previewBox.style.display = "block";
+    if (previewBox) previewBox.style.display = "flex";
   };
   reader.readAsDataURL(file);
+}
+
+function clearPhotoSelection() {
+  const fileInput = document.getElementById("issuePhoto");
+  if (fileInput) fileInput.value = "";
+  const previewBox = document.getElementById("photoPreviewBox");
+  if (previewBox) previewBox.style.display = "none";
+  const previewImg = document.getElementById("photoPreviewImg");
+  if (previewImg) previewImg.src = "";
+  const note = document.getElementById("photoSizeNote");
+  if (note) note.innerText = "";
 }
 
 function getSelectedSoftware() {
@@ -438,11 +477,11 @@ async function prepareSubmit() {
   }
 
   const phoneVal = document.getElementById("contactPhone").value.trim();
-  if (!/^[0-9+\-#\s()\/,]{2,30}$/.test(phoneVal)) {
+  if (!/^[0-9+\-#\s()\/,.a-zA-Zก-๙]{2,40}$/.test(phoneVal)) {
     return Swal.fire({
       icon: "warning",
       title: "เบอร์ติดต่อไม่ถูกต้อง",
-      text: "กรุณากรอกเฉพาะตัวเลข หรือเบอร์ภายใน เช่น 108, 332/381 หรือ 081-234-5678"
+      text: "กรุณากรอกเบอร์โทรหรือเบอร์ภายใน เช่น 108, 332 ต่อ 1, หรือ 081-234-5678"
     });
   }
 
@@ -463,10 +502,11 @@ async function prepareSubmit() {
   }
 
   const issueType = document.getElementById("issueType").value;
-  const fileInput = document.getElementById("oldPcPhoto");
+  const fileInput = document.getElementById("issuePhoto");
+  const hasFile = Boolean(fileInput && fileInput.files && fileInput.files.length > 0);
 
   if (issueType === "Request_New_PC") {
-    if (!fileInput.files || fileInput.files.length === 0) {
+    if (!hasFile) {
       return Swal.fire({
         icon: "warning",
         title: "กรุณาแนบรูปภาพ",
@@ -481,8 +521,6 @@ async function prepareSubmit() {
       });
     }
   }
-
-  const hasFile = issueType === "Request_New_PC" && fileInput.files && fileInput.files.length > 0;
 
   const btn = document.getElementById("submitBtn");
   btn.disabled = true;
@@ -499,8 +537,8 @@ async function prepareSubmit() {
     empPosition:      document.getElementById("empPosition").value,
     empPlant:         document.getElementById("empPlant").value,
     empEmail:         emailVal,
-    contactPhone:     document.getElementById("contactPhone").value.trim(),
-    assetTag:         document.getElementById("assetTag").value.trim(),
+    contactPhone:     phoneVal,
+    assetTag:         assetVal,
     assetNumber:      document.getElementById("assetNumber").value.trim(),
     priority:         document.getElementById("priority").value,
     issueType:        issueType,
@@ -672,14 +710,10 @@ function resetForm() {
   document.getElementById("itForm").reset();
   lastAutoPhone = "";
   clearSelectedEmployee(true);
+  clearPhotoSelection();
 
   document.getElementById("softwareSection").style.display = "none";
   document.getElementById("softwareGrid").innerHTML = "";
-
-  const previewBox = document.getElementById("photoPreviewBox");
-  if (previewBox) previewBox.style.display = "none";
-  const note = document.getElementById("photoSizeNote");
-  if (note) note.innerText = "";
 
   toggleNewPcSection();
   resetBtn();
@@ -696,7 +730,7 @@ function resetBtn() {
 async function loadMyTickets() {
   const input = document.getElementById("trackEmpId");
   const rawId = input ? input.value.trim() : "";
-  const empId = rawId.replace(/\.0$/, "");
+  const empId = rawId.replace(/\.0+$/, "");
 
   if (!empId) {
     return Swal.fire("แจ้งเตือน", "กรุณากรอกรหัสพนักงานก่อนค้นหา", "warning");
@@ -735,12 +769,22 @@ async function loadMyTickets() {
       const dateDisplay = r.date ? String(r.date).split(" ")[0] : "—";
       const issueLabel = ISSUE_LABELS[r.issue] || r.issue || "—";
 
+      let procureBadge = '';
+      if (r.prNo || r.poNo || r.newAsset) {
+        const parts = [];
+        if (r.prNo) parts.push(`PR: ${_esc(r.prNo)}`);
+        if (r.poNo) parts.push(`PO: ${_esc(r.poNo)}`);
+        if (r.newAsset) parts.push(`Asset ใหม่: ${_esc(r.newAsset)}`);
+        procureBadge = `<div class="mt-1"><span class="badge bg-warning text-dark font-size-11" title="${parts.join(' | ')}"><i class="bi bi-cart-check me-1"></i>${parts.join(' | ')}</span></div>`;
+      }
+
       return `
         <tr>
           <td class="fw-bold text-primary" style="white-space:nowrap;">${_esc(r.ticketId)}</td>
           <td style="white-space:nowrap;">${_esc(dateDisplay)}</td>
           <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(issueLabel)}">
             ${_esc(issueLabel)}
+            ${procureBadge}
           </td>
           <td>${badge}</td>
           <td class="d-none d-md-table-cell">${_esc(r.assignee || "—")}</td>

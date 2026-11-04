@@ -1,0 +1,49 @@
+{
+  "id": "it-support-helpdesk",
+  "name": "IT Support Helpdesk & IT Control Center",
+  "short_name": "IT Support",
+  "description": "ระบบแจ้งซ่อมและบริหารจัดการงานเทคโนโลยีสารสนเทศ",
+  "start_url": "Index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#11121d",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "แจ้งซ่อมปัญหาใหม่",
+      "short_name": "แจ้งซ่อม",
+      "description": "เปิดฟอร์มแจ้งซ่อมคอมพิวเตอร์และอุปกรณ์ไอที",
+      "url": "Index.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "ตรวจสอบสถานะงาน",
+      "short_name": "ติดตามสถานะ",
+      "description": "ดูประวัติและสถานะการซ่อมด้วยรหัสพนักงาน",
+      "url": "Index.html#trackTab",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "IT Control Center",
+      "short_name": "แดชบอร์ด IT",
+      "description": "เข้าสู่ระบบบริหารจัดการงานสำหรับช่าง IT",
+      "url": "dashboard.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

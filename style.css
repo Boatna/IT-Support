@@ -962,3 +962,71 @@ body.dashboard-body {
     display: block;
   }
 }
+
+.pwa-install-banner {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1.5px solid #93c5fd;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+}
+
+.photo-upload-card {
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.photo-upload-card:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.quick-note-pill {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  background-color: #24273d !important;
+  color: #cbd5e1 !important;
+  border: 1px solid #3b3f5c !important;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.quick-note-pill:hover {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  transform: translateY(-1px);
+}
+
+.quick-note-pill:active {
+  transform: scale(0.97);
+}
+
+.procurement-box {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px dashed #f59e0b;
+}
+
+.procurement-box label {
+  color: #94a3b8;
+}
+
+.procurement-box input {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+.procurement-box input:focus {
+  background-color: #1e293b;
+  color: #ffffff;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.2);
+}
